@@ -31,7 +31,6 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinApplication
 import sprintplanner.composeapp.generated.resources.Res
 import sprintplanner.composeapp.generated.resources.app_title
-import sprintplanner.composeapp.generated.resources.compose_multiplatform
 
 @Composable
 @Preview
