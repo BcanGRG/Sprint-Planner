@@ -11,7 +11,9 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import cafe.adriel.voyager.navigator.Navigator
 import com.bcan.sprintplanner.di.firebaseModule
+import com.bcan.sprintplanner.presentation.home.HomeScreen
 import com.bcan.sprintplanner.themes.backgroundLight
 import com.bcan.sprintplanner.themes.errorLight
 import com.bcan.sprintplanner.themes.onBackgroundLight
@@ -24,8 +26,12 @@ import com.bcan.sprintplanner.themes.primaryLight
 import com.bcan.sprintplanner.themes.secondaryContainerLight
 import com.bcan.sprintplanner.themes.secondaryLight
 import com.bcan.sprintplanner.themes.surfaceLight
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinApplication
+import sprintplanner.composeapp.generated.resources.Res
+import sprintplanner.composeapp.generated.resources.app_title
+import sprintplanner.composeapp.generated.resources.compose_multiplatform
 
 @Composable
 @Preview
@@ -56,10 +62,11 @@ fun App() {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             modifier = Modifier.fillMaxWidth(),
-                            text = "Sprint Planner",
+                            text = stringResource(Res.string.app_title),
                             style = MaterialTheme.typography.h3,
                             color = secondaryLight, textAlign = TextAlign.Center
                         )
+                        Navigator(HomeScreen())
                     }
                 }
             }
