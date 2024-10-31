@@ -42,7 +42,7 @@ fun App() {
             onBackground = onBackgroundLight,
             onSurface = onSurfaceLight,
             onError = onErrorLight,
-            isLight = false,
+            isLight = true,
         )
     ) {
         Scaffold {
