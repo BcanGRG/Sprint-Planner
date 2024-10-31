@@ -11,6 +11,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import com.bcan.sprintplanner.di.firebaseModule
 import com.bcan.sprintplanner.themes.backgroundLight
 import com.bcan.sprintplanner.themes.errorLight
 import com.bcan.sprintplanner.themes.onBackgroundLight
@@ -24,6 +25,7 @@ import com.bcan.sprintplanner.themes.secondaryContainerLight
 import com.bcan.sprintplanner.themes.secondaryLight
 import com.bcan.sprintplanner.themes.surfaceLight
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinApplication
 
 @Composable
 @Preview
@@ -45,18 +47,20 @@ fun App() {
             isLight = true,
         )
     ) {
-        Scaffold {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colors.background
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = "Sprint Planner",
-                        style = MaterialTheme.typography.h2,
-                        color = secondaryLight, textAlign = TextAlign.Center
-                    )
+        KoinApplication(application = { modules(firebaseModule) }) {
+            Scaffold {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colors.background
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Sprint Planner",
+                            style = MaterialTheme.typography.h2,
+                            color = secondaryLight, textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

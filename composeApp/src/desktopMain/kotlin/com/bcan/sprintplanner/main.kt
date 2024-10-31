@@ -9,6 +9,7 @@ import com.google.firebase.FirebasePlatform
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.FirebaseOptions
 import dev.gitlive.firebase.initialize
+import org.koin.compose.KoinApplication
 
 fun main() = application {
 
