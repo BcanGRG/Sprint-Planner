@@ -57,7 +57,7 @@ fun App() {
                         Text(
                             modifier = Modifier.fillMaxWidth(),
                             text = "Sprint Planner",
-                            style = MaterialTheme.typography.h2,
+                            style = MaterialTheme.typography.h3,
                             color = secondaryLight, textAlign = TextAlign.Center
                         )
                     }
