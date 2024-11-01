@@ -12,7 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import cafe.adriel.voyager.navigator.Navigator
-import com.bcan.sprintplanner.di.firebaseModule
+import com.bcan.sprintplanner.di.provideFirebaseModule
+import com.bcan.sprintplanner.di.provideRepositoryBindModules
+import com.bcan.sprintplanner.di.provideViewModelModule
 import com.bcan.sprintplanner.presentation.home.HomeScreen
 import com.bcan.sprintplanner.themes.backgroundLight
 import com.bcan.sprintplanner.themes.errorLight
@@ -26,6 +28,8 @@ import com.bcan.sprintplanner.themes.primaryLight
 import com.bcan.sprintplanner.themes.secondaryContainerLight
 import com.bcan.sprintplanner.themes.secondaryLight
 import com.bcan.sprintplanner.themes.surfaceLight
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.firestore.firestore
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinApplication
@@ -52,7 +56,13 @@ fun App() {
             isLight = true,
         )
     ) {
-        KoinApplication(application = { modules(firebaseModule) }) {
+        KoinApplication(application = {
+            modules(
+                provideFirebaseModule,
+                provideRepositoryBindModules,
+                provideViewModelModule
+            )
+        }) {
             Scaffold {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
