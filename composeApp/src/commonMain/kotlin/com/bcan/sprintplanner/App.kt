@@ -3,6 +3,7 @@ package com.bcan.sprintplanner
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
@@ -11,6 +12,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.Navigator
 import com.bcan.sprintplanner.di.provideFirebaseModule
 import com.bcan.sprintplanner.di.provideRepositoryBindModules
@@ -70,7 +72,7 @@ fun App() {
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
                             text = stringResource(Res.string.app_title),
                             style = MaterialTheme.typography.h3,
                             color = secondaryLight, textAlign = TextAlign.Center
