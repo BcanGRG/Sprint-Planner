@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SprintModel(
     val sprintId: String? = null,
-    val tasks: List<TaskModel>? = null
 )
 
 @Serializable

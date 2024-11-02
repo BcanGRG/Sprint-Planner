@@ -24,4 +24,27 @@ class HomeRepositoryImpl(
             emit(NetworkResult.OnError(e.message))
         }
     }.flowOn(Dispatchers.IO)
+
+    override suspend fun createNewSprint(sprintId: String): Flow<NetworkResult<Any>> = flow {
+        emit(NetworkResult.OnLoading)
+        try {
+            firestore.collection("Sprints").document(sprintId)
+                .set(SprintModel(sprintId = sprintId), merge = true)
+            emit(NetworkResult.OnSuccess(null, ""))
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            emit(NetworkResult.OnError(t.message))
+        }
+    }.flowOn(Dispatchers.IO)
+
+    override suspend fun deleteSprint(sprintId: String): Flow<NetworkResult<Any>> = flow {
+        emit(NetworkResult.OnLoading)
+        try {
+            firestore.collection("Sprints").document(sprintId).delete()
+            emit(NetworkResult.OnSuccess(null, ""))
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            emit(NetworkResult.OnError(t.message))
+        }
+    }.flowOn(Dispatchers.IO)
 }
