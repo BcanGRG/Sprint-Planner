@@ -7,9 +7,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Snackbar
+import androidx.compose.material.SnackbarDuration
+import androidx.compose.material.SnackbarHost
+import androidx.compose.material.SnackbarHostState
+import androidx.compose.material.SnackbarResult
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,8 +37,9 @@ import com.bcan.sprintplanner.themes.primaryLight
 import com.bcan.sprintplanner.themes.secondaryContainerLight
 import com.bcan.sprintplanner.themes.secondaryLight
 import com.bcan.sprintplanner.themes.surfaceLight
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.firestore.firestore
+import com.bcan.sprintplanner.ui.snackbar.ObserveAsEvents
+import com.bcan.sprintplanner.ui.snackbar.SnackbarController
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinApplication
@@ -65,7 +73,31 @@ fun App() {
                 provideViewModelModule
             )
         }) {
-            Scaffold {
+            val snackbarHostState = remember { SnackbarHostState() }
+            val scope = rememberCoroutineScope()
+            ObserveAsEvents(flow = SnackbarController.events, snackbarHostState) { event ->
+                scope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    val result = snackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = event.action?.name,
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) event.action?.action?.invoke()
+                }
+            }
+
+            Scaffold(
+                snackbarHost = {
+                    SnackbarHost(hostState = snackbarHostState) {
+                        Snackbar(
+                            snackbarData = it,
+                            contentColor = MaterialTheme.colors.onPrimary,
+                            backgroundColor = MaterialTheme.colors.primary
+                        )
+                    }
+                }
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background

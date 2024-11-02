@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -36,11 +37,15 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.presentation.sprint.SprintScreen
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
+import com.bcan.sprintplanner.ui.snackbar.SnackbarController
+import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
+import kotlinx.coroutines.launch
 
 class HomeScreen : Screen {
     @Composable
     override fun Content() {
 
+        val scope = rememberCoroutineScope()
         val navigator = LocalNavigator.currentOrThrow
         val viewModel = koinScreenModel<HomeViewModel>()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -55,7 +60,7 @@ class HomeScreen : Screen {
             Row(
                 modifier = Modifier.clickable {
                     if (viewModel.checkDocumentExists("101")) {
-                        navigator.push(SprintScreen(sprintId = "Sprint 94"))
+                        scope.launch { SnackbarController.sendEvent(SnackbarEvent("Document already exists")) }
                     } else {
                         viewModel.createNewSprint("101")
                     }
