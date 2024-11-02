@@ -98,6 +98,41 @@ class HomeViewModel(
         }
     }
 
+    fun deleteSprint(sprintId: String) {
+        screenModelScope.launch {
+            homeRepository.deleteSprint(sprintId).collectLatest { result ->
+                when (result) {
+                    is NetworkResult.OnLoading -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = true,
+                                errorMessage = null
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnSuccess -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = null,
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnError -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun checkDocumentExists(documentId: String): Boolean {
         return _uiState.value.sprints?.any { it.sprintId == documentId } ?: false
     }

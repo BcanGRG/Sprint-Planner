@@ -18,10 +18,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,7 +53,6 @@ class HomeScreen : Screen {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         if (uiState.isLoading) SprintPlannerLoadingIndicator()
-
 
         Box(
             modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
@@ -104,6 +105,26 @@ class HomeScreen : Screen {
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.h5, lineHeight = 0.sp
                             )
+                            IconButton(
+                                modifier = Modifier.padding(12.dp).size(30.dp)
+                                    .align(Alignment.TopEnd),
+                                onClick = {
+                                    if (viewModel.checkDocumentExists(sprint.sprintId.orEmpty())) {
+                                        viewModel.deleteSprint(sprintId = sprint.sprintId.orEmpty())
+                                    } else scope.launch {
+                                        SnackbarController.sendEvent(
+                                            SnackbarEvent(
+                                                "Document does not exist"
+                                            )
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Remove Sprint Icon",
+                                )
+                            }
                         }
                     }
                 }
