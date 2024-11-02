@@ -4,7 +4,6 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.bcan.sprintplanner.data.models.NetworkResult
 import com.bcan.sprintplanner.data.models.SprintModel
-import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.data.repositories.HomeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -62,6 +61,45 @@ class HomeViewModel(
                 }
             }
         }
+    }
+
+    fun createNewSprint(sprintId: String) {
+        screenModelScope.launch {
+            homeRepository.createNewSprint(sprintId).collectLatest { result ->
+                when (result) {
+                    is NetworkResult.OnLoading -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = true,
+                                errorMessage = null
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnSuccess -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = null,
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnError -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun checkDocumentExists(documentId: String): Boolean {
+        return _uiState.value.sprints?.any { it.sprintId == documentId } ?: false
     }
 }
 

@@ -7,4 +7,5 @@ import kotlinx.coroutines.flow.Flow
 interface HomeRepository {
 
     suspend fun getSprints(): Flow<NetworkResult<List<SprintModel>>>
+    suspend fun createNewSprint(sprintId: String): Flow<NetworkResult<Any>>
 }
