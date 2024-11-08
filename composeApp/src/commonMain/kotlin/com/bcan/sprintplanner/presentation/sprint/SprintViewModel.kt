@@ -53,6 +53,45 @@ class SprintViewModel(
             }
         }
     }
+
+    fun createTask(
+        sprintId: String,
+        taskId: String,
+        taskModel: TaskModel
+    ) {
+        screenModelScope.launch {
+            sprintRepository.createTask(sprintId, taskId, taskModel).collectLatest { result ->
+                when (result) {
+                    is NetworkResult.OnLoading -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = true,
+                                errorMessage = null
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnSuccess -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = null,
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnError -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 data class SprintUiState(

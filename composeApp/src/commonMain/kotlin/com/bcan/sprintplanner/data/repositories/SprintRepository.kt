@@ -7,5 +7,10 @@ import kotlinx.coroutines.flow.Flow
 interface SprintRepository {
 
     suspend fun getTasks(sprintId: String): Flow<NetworkResult<List<TaskModel>>>
+    suspend fun createTask(
+        sprintId: String,
+        taskId: String,
+        taskModel: TaskModel
+    ): Flow<NetworkResult<Any>>
 
 }
