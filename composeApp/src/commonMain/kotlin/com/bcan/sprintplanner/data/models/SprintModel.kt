@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SprintModel(
-    val sprintId: String? = null,
+    val sprintId: Int? = null,
+    val holidayCount: Double? = 0.0,
 )
 
 @Serializable
