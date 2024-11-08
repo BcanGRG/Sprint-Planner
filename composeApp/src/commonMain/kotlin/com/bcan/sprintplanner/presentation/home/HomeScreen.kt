@@ -65,6 +65,9 @@ class HomeScreen : Screen {
         var addSprintDialogVisibility by remember { mutableStateOf(false) }
 
         if (uiState.isLoading) SprintPlannerLoadingIndicator()
+        if (uiState.errorMessage.isNullOrEmpty().not()) {
+            scope.launch { SnackbarController.sendEvent(SnackbarEvent(uiState.errorMessage!!)) }
+        }
 
         if (addSprintDialogVisibility) {
             Dialog(
