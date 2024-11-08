@@ -63,9 +63,9 @@ class HomeViewModel(
         }
     }
 
-    fun createNewSprint(sprintId: String) {
+    fun createNewSprint(sprintModel: SprintModel) {
         screenModelScope.launch {
-            homeRepository.createNewSprint(sprintId).collectLatest { result ->
+            homeRepository.createNewSprint(sprintModel).collectLatest { result ->
                 when (result) {
                     is NetworkResult.OnLoading -> {
                         _uiState.update { state ->
@@ -133,7 +133,7 @@ class HomeViewModel(
         }
     }
 
-    fun checkDocumentExists(documentId: String): Boolean {
+    fun checkDocumentExists(documentId: Int): Boolean {
         return _uiState.value.sprints?.any { it.sprintId == documentId } ?: false
     }
 }
