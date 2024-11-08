@@ -17,7 +17,9 @@ class HomeRepositoryImpl(
         emit(NetworkResult.OnLoading)
         try {
             firestore.collection("Sprints")
-                .orderBy("sprintId", Query.Direction.ASCENDING).snapshots.collect { sprints ->
+                .orderBy("sprintId", Query.Direction.DESCENDING)
+                .limit(10)
+                .snapshots.collect { sprints ->
                 val result = sprints.documents.map { it.data<SprintModel>() }
                 emit(NetworkResult.OnSuccess(result, ""))
             }
