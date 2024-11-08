@@ -1,8 +1,10 @@
 package com.bcan.sprintplanner
 
 import android.app.Application
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.google.firebase.FirebasePlatform
@@ -15,7 +17,11 @@ fun main() = application {
     initFirebase()
 
     Window(
-        state = rememberWindowState(width = 1280.dp, height = 900.dp),
+        state = rememberWindowState(
+            width = 1320.dp,
+            height = 960.dp,
+            position = WindowPosition.Aligned(Alignment.Center)
+        ),
         onCloseRequest = ::exitApplication,
         title = "SprintPlanner",
     ) {
