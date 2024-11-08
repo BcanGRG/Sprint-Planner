@@ -163,14 +163,14 @@ class HomeScreen : Screen {
         if (uiState.sprints.isNullOrEmpty().not()) {
             LazyVerticalGrid(
                 modifier = Modifier.fillMaxSize().padding(top = 48.dp),
-                columns = GridCells.Fixed(3),
+                columns = GridCells.Fixed(4),
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Center
             ) {
                 items(uiState.sprints!!) { sprint ->
                     Card(
                         modifier = Modifier.padding(16.dp).height(150.dp)
-                            .clickable { navigator.push(SprintScreen(sprintId = "Sprint ${sprint.sprintId}")) },
+                            .clickable { navigator.push(SprintScreen(sprintId = sprint.sprintId.toString())) },
                         shape = RoundedCornerShape(16.dp),
                         contentColor = MaterialTheme.colors.primary,
                         backgroundColor = MaterialTheme.colors.surface,
