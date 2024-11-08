@@ -120,7 +120,7 @@ class HomeScreen : Screen {
 
                         Button(onClick = {
                             if (viewModel.checkDocumentExists(sprintNumber.toInt())) {
-                                scope.launch { SnackbarController.sendEvent(SnackbarEvent("Document already exists")) }
+                                scope.launch { SnackbarController.sendEvent(SnackbarEvent("Sprint already exists")) }
                             } else {
                                 viewModel.createNewSprint(
                                     SprintModel(
