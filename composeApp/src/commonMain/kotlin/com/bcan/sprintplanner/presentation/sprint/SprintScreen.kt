@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -30,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,6 +43,8 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.data.models.TaskModel
+import com.bcan.sprintplanner.ui.PlatformTypes
+import com.bcan.sprintplanner.ui.SelectionCard
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
@@ -45,6 +52,7 @@ import kotlinx.coroutines.launch
 
 class SprintScreen(val sprintId: String) : Screen {
 
+    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     override fun Content() {
 
@@ -57,7 +65,7 @@ class SprintScreen(val sprintId: String) : Screen {
 
         var taskCode by remember { mutableStateOf("") }
         var summary by remember { mutableStateOf("") }
-        var platform by remember { mutableStateOf("") }
+        var platform by remember { mutableStateOf<PlatformTypes>(PlatformTypes.Unknown) }
         var storyPoint by remember { mutableStateOf("0") }
         var developmentPoint by remember { mutableStateOf("0") }
         var testPoint by remember { mutableStateOf("0") }
@@ -121,24 +129,80 @@ class SprintScreen(val sprintId: String) : Screen {
                             horizontalArrangement = Arrangement.spacedBy(32.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            var isDropDownExpanded by remember { mutableStateOf(false) }
+                            val list =
+                                listOf(PlatformTypes.AND, PlatformTypes.IOS, PlatformTypes.TEST)
                             Text("Platform :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = platform,
-                                onValueChange = { platform = it },
-                                modifier = Modifier.weight(7f)
-                            )
+                            ExposedDropdownMenuBox(
+                                modifier = Modifier.weight(7f),
+                                expanded = isDropDownExpanded,
+                                onExpandedChange = { isDropDownExpanded = !isDropDownExpanded }
+                            ) {
+                                SelectionCard(
+                                    value = platform.name, onClick = { isDropDownExpanded = true }
+                                )
+                                DropdownMenu(
+                                    modifier = Modifier.exposedDropdownSize(),
+                                    expanded = isDropDownExpanded,
+                                    onDismissRequest = { isDropDownExpanded = false },
+                                ) {
+                                    list.forEach {
+                                        DropdownMenuItem(
+                                            enabled = true,
+                                            onClick = {
+                                                platform = it
+                                                isDropDownExpanded = false
+                                            }) {
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = it.name,
+                                                fontSize = 15.sp,
+                                                lineHeight = 20.sp, color = Color.Black
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(32.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            var isDropDownExpanded by remember { mutableStateOf(false) }
                             Text("Story Point :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = storyPoint,
-                                onValueChange = { storyPoint = it },
-                                modifier = Modifier.weight(7f)
-                            )
+                            val list =
+                                listOf("1", "2", "3", "5", "8", "13", "21", "34")
+                            ExposedDropdownMenuBox(
+                                modifier = Modifier.weight(7f),
+                                expanded = isDropDownExpanded,
+                                onExpandedChange = { isDropDownExpanded = !isDropDownExpanded }
+                            ) {
+                                SelectionCard(
+                                    value = storyPoint, onClick = { isDropDownExpanded = true }
+                                )
+                                DropdownMenu(
+                                    modifier = Modifier.exposedDropdownSize(),
+                                    expanded = isDropDownExpanded,
+                                    onDismissRequest = { isDropDownExpanded = false },
+                                ) {
+                                    list.forEach {
+                                        DropdownMenuItem(
+                                            enabled = true,
+                                            onClick = {
+                                                storyPoint = it
+                                                isDropDownExpanded = false
+                                            }) {
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = it,
+                                                fontSize = 15.sp,
+                                                lineHeight = 20.sp, color = Color.Black
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         Row(
@@ -195,7 +259,7 @@ class SprintScreen(val sprintId: String) : Screen {
                                 sprintId, taskCode, TaskModel(
                                     taskId = taskCode,
                                     summary = summary,
-                                    platform = platform,
+                                    platform = platform.name,
                                     storyPoint = storyPoint.toInt(),
                                     developmentPoint = developmentPoint.toInt(),
                                     testPoint = testPoint.toInt(),
