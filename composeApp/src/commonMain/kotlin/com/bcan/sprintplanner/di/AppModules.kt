@@ -13,7 +13,11 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 val provideFirebaseModule = module {
-    single { Firebase.firestore }
+    single {
+        val firestore = Firebase.firestore
+        firestore.setLoggingEnabled(true)
+        firestore
+    }
 }
 
 val provideRepositoryBindModules = module {
