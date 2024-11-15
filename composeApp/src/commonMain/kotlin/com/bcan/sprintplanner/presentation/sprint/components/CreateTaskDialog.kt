@@ -21,6 +21,7 @@ import com.bcan.sprintplanner.ui.NamedPlatformDropdownField
 import com.bcan.sprintplanner.ui.NamedTextField
 import com.bcan.sprintplanner.ui.PlatformTypes
 import com.bcan.sprintplanner.ui.UiAction
+import com.bcan.sprintplanner.ui.assignedList
 import com.bcan.sprintplanner.ui.platformList
 import com.bcan.sprintplanner.ui.pointsList
 
@@ -99,10 +100,11 @@ fun CreateTaskDialog(
                     onClickDropdownItem = { onAction(UiAction.UpdateTestPoint(it)) }
                 )
 
-                NamedTextField(
+                NamedDropdownField(
                     fieldName = "Assigned To :",
                     value = assignedTo,
-                    onValueChange = { onAction(UiAction.UpdateAssignedTo(it)) }
+                    values = assignedList,
+                    onClickDropdownItem = { onAction(UiAction.UpdateAssignedTo(it)) }
                 )
 
                 NamedTextField(

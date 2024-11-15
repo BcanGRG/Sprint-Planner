@@ -20,3 +20,16 @@ sealed interface UiAction {
 
 val platformList = listOf(PlatformTypes.AND, PlatformTypes.IOS, PlatformTypes.TEST)
 val pointsList = listOf("1", "2", "3", "5", "8", "13", "21", "34")
+val assignedList = listOf(
+    "Unassigned",
+    "Ali Han",
+    "Melisa",
+    "Cihan",
+    "Tarık",
+    "Burak Can",
+    "Tuğba",
+    "Mücahit",
+    "Azime",
+    "Yağmur",
+    "Burak"
+)
