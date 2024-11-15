@@ -18,7 +18,7 @@ fun main() = application {
 
     Window(
         state = rememberWindowState(
-            width = 1320.dp,
+            width = 1440.dp,
             height = 960.dp,
             position = WindowPosition.Aligned(Alignment.Center)
         ),
