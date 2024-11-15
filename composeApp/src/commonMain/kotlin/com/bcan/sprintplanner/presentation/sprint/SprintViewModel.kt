@@ -156,5 +156,5 @@ class SprintViewModel(
 data class SprintUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val tasks: List<TaskModel>? = emptyList(),
+    val tasks: List<TaskModel>? = null,
 )
