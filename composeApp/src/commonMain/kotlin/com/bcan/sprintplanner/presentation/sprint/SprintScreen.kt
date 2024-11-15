@@ -1,30 +1,40 @@
 package com.bcan.sprintplanner.presentation.sprint
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ExposedDropdownMenuBox
+import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,26 +43,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.data.models.TaskModel
-import com.bcan.sprintplanner.ui.PlatformTypes
-import com.bcan.sprintplanner.ui.SelectionCard
+import com.bcan.sprintplanner.presentation.sprint.components.CreateTaskDialog
+import com.bcan.sprintplanner.themes.onBackgroundLight
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
+import com.bcan.sprintplanner.ui.TaskAction
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
 import kotlinx.coroutines.launch
 
 class SprintScreen(val sprintId: String) : Screen {
 
-    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     override fun Content() {
 
@@ -63,14 +73,7 @@ class SprintScreen(val sprintId: String) : Screen {
 
         var createTaskDialogVisibility by remember { mutableStateOf(false) }
 
-        var taskCode by remember { mutableStateOf("") }
-        var summary by remember { mutableStateOf("") }
-        var platform by remember { mutableStateOf<PlatformTypes>(PlatformTypes.Unknown) }
-        var storyPoint by remember { mutableStateOf("0") }
-        var developmentPoint by remember { mutableStateOf("0") }
-        var testPoint by remember { mutableStateOf("0") }
-        var assignedTo by remember { mutableStateOf("Unassigned") }
-        var notes by remember { mutableStateOf("") }
+        LaunchedEffect(Unit) { viewModel.getTasks(sprintId) }
 
         if (uiState.isLoading) SprintPlannerLoadingIndicator()
 
@@ -78,213 +81,77 @@ class SprintScreen(val sprintId: String) : Screen {
             scope.launch { SnackbarController.sendEvent(SnackbarEvent(uiState.errorMessage!!)) }
         }
 
-        if (createTaskDialogVisibility) {
-            Dialog(
-                onDismissRequest = { createTaskDialogVisibility = false },
-                properties = DialogProperties(
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true,
-                    usePlatformDefaultWidth = true,
+        val taskModel by remember {
+            derivedStateOf {
+                TaskModel(
+                    taskCode = viewModel.taskCode,
+                    sprintId = sprintId,
+                    summary = viewModel.summary,
+                    platform = viewModel.platform.name,
+                    storyPoint = viewModel.storyPoint.toInt(),
+                    developmentPoint = viewModel.developmentPoint.toInt(),
+                    testPoint = viewModel.testPoint.toInt(),
+                    assignedTo = viewModel.assignedTo,
+                    notes = viewModel.notes
                 )
-            ) {
-
-                Box(
-                    modifier = Modifier
-                        .background(color = Color.White, shape = RoundedCornerShape(4.dp))
-                        .fillMaxWidth(0.9f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(
-                            24.dp,
-                            alignment = Alignment.CenterVertically
-                        ), horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Task Code :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = taskCode,
-                                onValueChange = { taskCode = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Summary :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = summary,
-                                onValueChange = { summary = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            var isDropDownExpanded by remember { mutableStateOf(false) }
-                            val list =
-                                listOf(PlatformTypes.AND, PlatformTypes.IOS, PlatformTypes.TEST)
-                            Text("Platform :", modifier = Modifier.weight(3f))
-                            ExposedDropdownMenuBox(
-                                modifier = Modifier.weight(7f),
-                                expanded = isDropDownExpanded,
-                                onExpandedChange = { isDropDownExpanded = !isDropDownExpanded }
-                            ) {
-                                SelectionCard(
-                                    value = platform.name, onClick = { isDropDownExpanded = true }
-                                )
-                                DropdownMenu(
-                                    modifier = Modifier.exposedDropdownSize(),
-                                    expanded = isDropDownExpanded,
-                                    onDismissRequest = { isDropDownExpanded = false },
-                                ) {
-                                    list.forEach {
-                                        DropdownMenuItem(
-                                            enabled = true,
-                                            onClick = {
-                                                platform = it
-                                                isDropDownExpanded = false
-                                            }) {
-                                            Text(
-                                                modifier = Modifier.weight(1f),
-                                                text = it.name,
-                                                fontSize = 15.sp,
-                                                lineHeight = 20.sp, color = Color.Black
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            var isDropDownExpanded by remember { mutableStateOf(false) }
-                            Text("Story Point :", modifier = Modifier.weight(3f))
-                            val list =
-                                listOf("1", "2", "3", "5", "8", "13", "21", "34")
-                            ExposedDropdownMenuBox(
-                                modifier = Modifier.weight(7f),
-                                expanded = isDropDownExpanded,
-                                onExpandedChange = { isDropDownExpanded = !isDropDownExpanded }
-                            ) {
-                                SelectionCard(
-                                    value = storyPoint, onClick = { isDropDownExpanded = true }
-                                )
-                                DropdownMenu(
-                                    modifier = Modifier.exposedDropdownSize(),
-                                    expanded = isDropDownExpanded,
-                                    onDismissRequest = { isDropDownExpanded = false },
-                                ) {
-                                    list.forEach {
-                                        DropdownMenuItem(
-                                            enabled = true,
-                                            onClick = {
-                                                storyPoint = it
-                                                isDropDownExpanded = false
-                                            }) {
-                                            Text(
-                                                modifier = Modifier.weight(1f),
-                                                text = it,
-                                                fontSize = 15.sp,
-                                                lineHeight = 20.sp, color = Color.Black
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Development Point :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = developmentPoint,
-                                onValueChange = { developmentPoint = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Test Point :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = testPoint,
-                                onValueChange = { testPoint = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Assigned To :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = assignedTo,
-                                onValueChange = { assignedTo = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
-
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Notes :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = notes,
-                                onValueChange = { notes = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
-
-                        Button(onClick = {
-                            viewModel.createTask(
-                                sprintId, taskCode, TaskModel(
-                                    taskId = taskCode,
-                                    summary = summary,
-                                    platform = platform.name,
-                                    storyPoint = storyPoint.toInt(),
-                                    developmentPoint = developmentPoint.toInt(),
-                                    testPoint = testPoint.toInt(),
-                                    assignedTo = assignedTo,
-                                    notes = notes
-                                )
-                            )
-                            createTaskDialogVisibility = false
-                        }) { Text("Create Task") }
-                    }
-                }
             }
         }
 
-        LaunchedEffect(Unit) { viewModel.getTasks(sprintId) }
+        if (createTaskDialogVisibility) {
+            CreateTaskDialog(
+                taskCode = viewModel.taskCode,
+                summary = viewModel.summary,
+                platform = viewModel.platform,
+                storyPoint = viewModel.storyPoint,
+                developmentPoint = viewModel.developmentPoint,
+                testPoint = viewModel.testPoint,
+                assignedTo = viewModel.assignedTo,
+                notes = viewModel.notes,
+                onAction = viewModel::onAction,
+                onDismissRequest = { createTaskDialogVisibility = false },
+                onCreateTask = {
+                    viewModel.createTask(
+                        sprintId = sprintId,
+                        taskModel = taskModel
+                    )
+                    createTaskDialogVisibility = false
+                })
+        }
 
-        Column {
-            IconButton(
-                onClick = { navigator.pop() }
-            ) {
-                Icon(
-                    modifier = Modifier.padding(horizontal = 16.dp).size(32.dp),
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                IconButton(
+                    onClick = { navigator.pop() }
+                ) {
+                    Icon(
+                        modifier = Modifier.size(32.dp),
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                    )
+                }
+                Text(
+                    "Sprint-$sprintId",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.h4
                 )
+                if (!(uiState.tasks.isNullOrEmpty() && !uiState.isLoading)) {
+                    Row(
+                        modifier = Modifier.align(Alignment.TopEnd)
+                            .clickable { createTaskDialogVisibility = true },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add Task Icon",
+                            modifier = Modifier.size(30.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Create New Task",
+                            style = MaterialTheme.typography.subtitle2,
+                        )
+                    }
+                }
             }
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -306,10 +173,139 @@ class SprintScreen(val sprintId: String) : Screen {
                             )
                         }
                     }
-                } else {
-                    Text(uiState.tasks.toString())
+                } else Column(modifier = Modifier.fillMaxSize()) {
+                    TasksListSection(
+                        tasks = uiState.tasks!!,
+                        onAction = viewModel::onUpdateFieldAction,
+                        onRemoveTask = { taskId ->
+                            viewModel.deleteTask(sprintId, taskId)
+                        }
+                    )
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ColumnScope.TasksListSection(
+    tasks: List<TaskModel>,
+    onAction: (TaskAction) -> Unit,
+    onRemoveTask: (taskId: String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.align(Alignment.End).padding(vertical = 8.dp)
+            .fillMaxWidth(0.75f).fillMaxHeight(0.7f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(2.dp, MaterialTheme.colors.primary)
+    ) {
+        LazyColumn {
+            stickyHeader {
+                Row(
+                    modifier = Modifier.background(MaterialTheme.colors.surface)
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    HeaderText(text = "", weight = 0.3f)
+                    HeaderText(text = "Task Code")
+                    HeaderText(text = "Sprint")
+                    HeaderText(text = "Platform")
+                    HeaderText(text = "Summary", weight = 2f)
+                    HeaderText(text = "Story Point")
+                    HeaderText(text = "Development\nPoint")
+                    HeaderText(text = "Test Point")
+                    HeaderText(text = "Assigned")
+                    HeaderText(text = "Notes")
+                }
+            }
+            items(tasks) { task ->
+                TaskCard(
+                    modifier = Modifier.animateItem(),
+                    task = task, onAction = onAction, onRemoveTask = onRemoveTask
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RowScope.HeaderText(
+    text: String,
+    color: Color = Color.Transparent,
+    weight: Float = 1f
+) {
+    Text(
+        text = text,
+        modifier = Modifier.background(color).weight(weight),
+        color = onBackgroundLight,
+        style = MaterialTheme.typography.caption,
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+fun RowScope.TaskText(
+    text: String,
+    weight: Float = 1f,
+    color: Color = Color.Transparent,
+    align: TextAlign = TextAlign.Center,
+) {
+    Text(
+        text = text,
+        modifier = Modifier.background(color).weight(weight),
+        fontSize = 12.sp,
+        lineHeight = 15.sp,
+        color = MaterialTheme.colors.secondary,
+        textAlign = align, onTextLayout = {
+        }
+    )
+}
+
+@Composable
+fun TaskCard(
+    modifier: Modifier = Modifier,
+    task: TaskModel?,
+    onAction: (TaskAction) -> Unit,
+    onRemoveTask: (taskId: String) -> Unit
+) {
+    Card(
+        modifier = modifier,
+        border = BorderStroke(1.dp, MaterialTheme.colors.primary),
+        shape = RectangleShape,
+    ) {
+        Row {
+            Icon(
+                modifier = Modifier.padding(start = 6.dp, 4.dp).size(18.dp)
+                    .clickable { onRemoveTask(task?.taskId.orEmpty()) },
+                imageVector = Icons.Filled.Edit,
+                contentDescription = "Edit Task",
+                tint = MaterialTheme.colors.primary
+            )
+            Icon(
+                modifier = Modifier.padding(start = 2.dp, 4.dp).size(18.dp)
+                    .clickable { onRemoveTask(task?.taskId.orEmpty()) },
+                imageVector = Icons.Filled.Clear,
+                contentDescription = "Delete Task",
+                tint = MaterialTheme.colors.error
+            )
+        }
+        Row(
+            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterHorizontally)
+        ) {
+            TaskText(text = "", weight = 0.3f)
+            TaskText(text = task?.taskCode.orEmpty())
+            TaskText(text = "Sprint-${task?.sprintId}")
+            TaskText(text = task?.platform.orEmpty())
+            TaskText(text = task?.summary.orEmpty(), weight = 2f)
+            TaskText(text = task?.storyPoint.toString())
+            TaskText(text = task?.developmentPoint.toString())
+            TaskText(text = task?.testPoint.toString())
+            TaskText(text = task?.assignedTo.orEmpty())
+            TaskText(text = task?.notes.orEmpty())
         }
     }
 }

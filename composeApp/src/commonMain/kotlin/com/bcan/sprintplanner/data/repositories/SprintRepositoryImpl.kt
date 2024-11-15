@@ -5,6 +5,7 @@ import com.bcan.sprintplanner.data.models.TaskModel
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.util.UUID
 
 class SprintRepositoryImpl(
     private val firestore: FirebaseFirestore,
@@ -25,16 +26,50 @@ class SprintRepositoryImpl(
 
     override suspend fun createTask(
         sprintId: String,
+        taskModel: TaskModel
+    ): Flow<NetworkResult<Any>> = flow {
+        emit(NetworkResult.OnLoading)
+        try {
+            val taskId = generateTaskId()
+            firestore.collection("Sprints").document(sprintId)
+                .collection("Tasks").document(taskId)
+                .set(taskModel.copy(taskId = taskId), merge = true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emit(NetworkResult.OnError(e.message))
+        }
+    }
+
+    override suspend fun deleteTask(
+        sprintId: String,
+        taskId: String
+    ): Flow<NetworkResult<Any>> = flow {
+        emit(NetworkResult.OnLoading)
+        try {
+            firestore.collection("Sprints").document(sprintId)
+                .collection("Tasks").document(taskId).delete()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emit(NetworkResult.OnError(e.message))
+        }
+    }
+
+    override suspend fun updateTask(
+        sprintId: String,
         taskId: String,
         taskModel: TaskModel
     ): Flow<NetworkResult<Any>> = flow {
         emit(NetworkResult.OnLoading)
         try {
             firestore.collection("Sprints").document(sprintId)
-                .collection("Tasks").document(taskId).set(taskModel, merge = true)
+                .collection("Tasks").document(taskId).update(taskModel)
         } catch (e: Exception) {
             e.printStackTrace()
             emit(NetworkResult.OnError(e.message))
         }
     }
+}
+
+fun generateTaskId(): String {
+    return UUID.randomUUID().toString()
 }

@@ -67,14 +67,7 @@ class HomeViewModel(
         screenModelScope.launch {
             homeRepository.createNewSprint(sprintModel).collectLatest { result ->
                 when (result) {
-                    is NetworkResult.OnLoading -> {
-                        _uiState.update { state ->
-                            state.copy(
-                                isLoading = true,
-                                errorMessage = null
-                            )
-                        }
-                    }
+                    is NetworkResult.OnLoading -> {}
 
                     is NetworkResult.OnSuccess -> {
                         _uiState.update { state ->
@@ -102,14 +95,7 @@ class HomeViewModel(
         screenModelScope.launch {
             homeRepository.deleteSprint(sprintId).collectLatest { result ->
                 when (result) {
-                    is NetworkResult.OnLoading -> {
-                        _uiState.update { state ->
-                            state.copy(
-                                isLoading = true,
-                                errorMessage = null
-                            )
-                        }
-                    }
+                    is NetworkResult.OnLoading -> {}
 
                     is NetworkResult.OnSuccess -> {
                         _uiState.update { state ->

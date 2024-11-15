@@ -42,7 +42,7 @@ fun SelectionCard(
             Text(
                 text = it,
                 fontSize = 16.sp, letterSpacing = (0.3).sp,
-                color = if (enabled) Color.Black else Color(0xFFC1C1C1),
+                color = if (enabled) Black else Color(0xFFC1C1C1),
             )
             Spacer(modifier = Modifier.height(7.dp))
         }
@@ -67,7 +67,7 @@ fun SelectionCard(
                     Text(
                         modifier = Modifier.weight(1f),
                         text = value,
-                        fontSize = 15.sp, color = Color.Black
+                        fontSize = 15.sp, color = Black
                     )
                 } else {
                     Text(
