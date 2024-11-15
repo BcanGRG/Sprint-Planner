@@ -8,6 +8,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.bcan.sprintplanner.data.models.NetworkResult
 import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.data.repositories.SprintRepository
+import com.bcan.sprintplanner.ui.PlatformTypes
 import com.bcan.sprintplanner.ui.UiAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,7 +27,7 @@ class SprintViewModel(
         private set
     var summary by mutableStateOf("")
         private set
-    var platform by mutableStateOf("Unknown")
+    var platform by mutableStateOf<PlatformTypes>(PlatformTypes.Unknown)
         private set
     var storyPoint by mutableStateOf("0")
         private set

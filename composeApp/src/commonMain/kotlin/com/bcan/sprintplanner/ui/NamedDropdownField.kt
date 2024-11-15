@@ -66,3 +66,53 @@ fun NamedDropdownField(
         }
     }
 }
+
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun NamedPlatformDropdownField(
+    fieldName: String,
+    value : String,
+    values: List<PlatformTypes>,
+    onClickDropdownItem: (PlatformTypes) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(32.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        var isDropDownExpanded by remember { mutableStateOf(false) }
+
+        Text(fieldName, modifier = Modifier.weight(3f))
+        ExposedDropdownMenuBox(
+            modifier = Modifier.weight(7f),
+            expanded = isDropDownExpanded,
+            onExpandedChange = { isDropDownExpanded = !isDropDownExpanded }
+        ) {
+            SelectionCard(
+                value = value,
+                onClick = { isDropDownExpanded = true }
+            )
+            DropdownMenu(
+                modifier = Modifier.exposedDropdownSize(),
+                expanded = isDropDownExpanded,
+                onDismissRequest = { isDropDownExpanded = false },
+            ) {
+                values.forEach {
+                    DropdownMenuItem(
+                        enabled = true,
+                        onClick = {
+                            onClickDropdownItem(it)
+                            isDropDownExpanded = false
+                        }) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = it.name,
+                            fontSize = 15.sp,
+                            lineHeight = 20.sp, color = Color.Black
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
