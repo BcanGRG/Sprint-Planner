@@ -10,10 +10,13 @@ sealed class PlatformTypes(val name: String) {
 sealed interface UiAction {
     data class UpdateTaskCode(val taskCode: String) : UiAction
     data class UpdateSummary(val summary: String) : UiAction
-    data class UpdatePlatform(val platform: PlatformTypes) : UiAction
+    data class UpdatePlatform(val platform: String) : UiAction
     data class UpdateStoryPoint(val storyPoint: String) : UiAction
     data class UpdateDevelopmentPoint(val developmentPoint: String) : UiAction
     data class UpdateTestPoint(val testPoint: String) : UiAction
     data class UpdateAssignedTo(val assignedTo: String) : UiAction
     data class UpdateNotes(val notes: String) : UiAction
 }
+
+val platformList = listOf(PlatformTypes.AND.name, PlatformTypes.IOS.name, PlatformTypes.TEST.name)
+val pointsList = listOf("1", "2", "3", "5", "8", "13", "21", "34")
