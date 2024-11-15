@@ -13,4 +13,8 @@ interface SprintRepository {
         taskModel: TaskModel
     ): Flow<NetworkResult<Any>>
 
+    suspend fun deleteTask(
+        sprintId: String,
+        taskId: String
+    ): Flow<NetworkResult<Any>>
 }

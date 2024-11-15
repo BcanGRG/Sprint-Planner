@@ -127,6 +127,30 @@ class SprintViewModel(
             }
         }
     }
+
+    fun deleteTask(
+        sprintId: String,
+        taskId: String,
+    ) {
+        screenModelScope.launch {
+            sprintRepository.deleteTask(sprintId, taskId).collectLatest { result ->
+                when (result) {
+                    is NetworkResult.OnLoading -> {}
+
+                    is NetworkResult.OnSuccess -> {}
+
+                    is NetworkResult.OnError -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 data class SprintUiState(

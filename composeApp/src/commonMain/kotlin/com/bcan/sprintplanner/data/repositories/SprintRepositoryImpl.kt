@@ -37,4 +37,18 @@ class SprintRepositoryImpl(
             emit(NetworkResult.OnError(e.message))
         }
     }
+
+    override suspend fun deleteTask(
+        sprintId: String,
+        taskId: String
+    ): Flow<NetworkResult<Any>> = flow {
+        emit(NetworkResult.OnLoading)
+        try {
+            firestore.collection("Sprints").document(sprintId)
+                .collection("Tasks").document(taskId).delete()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emit(NetworkResult.OnError(e.message))
+        }
+    }
 }
