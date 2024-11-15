@@ -170,7 +170,7 @@ class HomeScreen : Screen {
                 items(uiState.sprints!!) { sprint ->
                     Card(
                         modifier = Modifier.padding(16.dp).height(150.dp)
-                            .clickable { navigator.push(SprintScreen(sprintId = sprint.sprintId.toString())) },
+                            .clickable { navigator.push(SprintScreen(sprintId = sprint.sprintId.toString())) }.animateItem(),
                         shape = RoundedCornerShape(16.dp),
                         contentColor = MaterialTheme.colors.primary,
                         backgroundColor = MaterialTheme.colors.surface,
