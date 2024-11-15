@@ -9,6 +9,7 @@ import com.bcan.sprintplanner.data.models.NetworkResult
 import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.data.repositories.SprintRepository
 import com.bcan.sprintplanner.ui.PlatformTypes
+import com.bcan.sprintplanner.ui.TaskAction
 import com.bcan.sprintplanner.ui.UiAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,6 +54,20 @@ class SprintViewModel(
         }
     }
 
+    fun onUpdateFieldAction(
+        action: TaskAction,
+    ) {
+        when (action) {
+            is TaskAction.UpdateTaskFields -> {
+                updateTask(
+                    action.sprintId,
+                    action.taskId,
+                    action.taskModel ?: TaskModel(taskId = "MAPP-0")
+                )
+            }
+        }
+    }
+
     fun getTasks(sprintId: String) {
         screenModelScope.launch {
             sprintRepository.getTasks(sprintId).collectLatest { result ->
@@ -91,11 +106,10 @@ class SprintViewModel(
 
     fun createTask(
         sprintId: String,
-        taskId: String,
         taskModel: TaskModel
     ) {
         screenModelScope.launch {
-            sprintRepository.createTask(sprintId, taskId, taskModel).collectLatest { result ->
+            sprintRepository.createTask(sprintId, taskModel).collectLatest { result ->
                 when (result) {
                     is NetworkResult.OnLoading -> {
                         _uiState.update { state ->
@@ -151,10 +165,35 @@ class SprintViewModel(
             }
         }
     }
+
+    fun updateTask(
+        sprintId: String,
+        taskId: String,
+        taskModel: TaskModel
+    ) {
+        screenModelScope.launch {
+            sprintRepository.updateTask(sprintId, taskId, taskModel).collectLatest { result ->
+                when (result) {
+                    is NetworkResult.OnLoading -> {}
+
+                    is NetworkResult.OnSuccess -> {}
+
+                    is NetworkResult.OnError -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 data class SprintUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val tasks: List<TaskModel>? = null,
+    val tasks: List<TaskModel>? = emptyList(),
 )
