@@ -6,8 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -31,8 +31,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +56,7 @@ import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.presentation.sprint.components.CreateTaskDialog
 import com.bcan.sprintplanner.themes.onBackgroundLight
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
+import com.bcan.sprintplanner.ui.TaskAction
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
 import kotlinx.coroutines.launch
@@ -78,6 +81,22 @@ class SprintScreen(val sprintId: String) : Screen {
             scope.launch { SnackbarController.sendEvent(SnackbarEvent(uiState.errorMessage!!)) }
         }
 
+        val taskModel by remember {
+            derivedStateOf {
+                TaskModel(
+                    taskCode = viewModel.taskCode,
+                    sprintId = sprintId,
+                    summary = viewModel.summary,
+                    platform = viewModel.platform.name,
+                    storyPoint = viewModel.storyPoint.toInt(),
+                    developmentPoint = viewModel.developmentPoint.toInt(),
+                    testPoint = viewModel.testPoint.toInt(),
+                    assignedTo = viewModel.assignedTo,
+                    notes = viewModel.notes
+                )
+            }
+        }
+
         if (createTaskDialogVisibility) {
             CreateTaskDialog(
                 taskCode = viewModel.taskCode,
@@ -93,18 +112,7 @@ class SprintScreen(val sprintId: String) : Screen {
                 onCreateTask = {
                     viewModel.createTask(
                         sprintId = sprintId,
-                        taskId = viewModel.taskCode,
-                        taskModel = TaskModel(
-                            sprintId = sprintId,
-                            taskId = viewModel.taskCode,
-                            summary = viewModel.summary,
-                            platform = viewModel.platform.name,
-                            storyPoint = viewModel.storyPoint.toInt(),
-                            developmentPoint = viewModel.developmentPoint.toInt(),
-                            testPoint = viewModel.testPoint.toInt(),
-                            assignedTo = viewModel.assignedTo,
-                            notes = viewModel.notes
-                        )
+                        taskModel = taskModel
                     )
                     createTaskDialogVisibility = false
                 })
@@ -165,12 +173,15 @@ class SprintScreen(val sprintId: String) : Screen {
                             )
                         }
                     }
-                } else TasksListSection(
-                    tasks = uiState.tasks!!,
-                    onRemoveTask = { taskId ->
-                        viewModel.deleteTask(sprintId, taskId)
-                    }
-                )
+                } else Column(modifier = Modifier.fillMaxSize()) {
+                    TasksListSection(
+                        tasks = uiState.tasks!!,
+                        onAction = viewModel::onUpdateFieldAction,
+                        onRemoveTask = { taskId ->
+                            viewModel.deleteTask(sprintId, taskId)
+                        }
+                    )
+                }
             }
         }
     }
@@ -178,12 +189,13 @@ class SprintScreen(val sprintId: String) : Screen {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BoxScope.TasksListSection(
+fun ColumnScope.TasksListSection(
     tasks: List<TaskModel>,
+    onAction: (TaskAction) -> Unit,
     onRemoveTask: (taskId: String) -> Unit
 ) {
     Surface(
-        modifier = Modifier.align(Alignment.TopEnd).padding(vertical = 8.dp)
+        modifier = Modifier.align(Alignment.End).padding(vertical = 8.dp)
             .fillMaxWidth(0.75f).fillMaxHeight(0.7f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(2.dp, MaterialTheme.colors.primary)
@@ -196,6 +208,7 @@ fun BoxScope.TasksListSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
+                    HeaderText(text = "", weight = 0.3f)
                     HeaderText(text = "Task Code")
                     HeaderText(text = "Sprint")
                     HeaderText(text = "Platform")
@@ -210,7 +223,7 @@ fun BoxScope.TasksListSection(
             items(tasks) { task ->
                 TaskCard(
                     modifier = Modifier.animateItem(),
-                    task = task, onRemoveTask = onRemoveTask
+                    task = task, onAction = onAction, onRemoveTask = onRemoveTask
                 )
             }
         }
@@ -237,14 +250,16 @@ fun RowScope.TaskText(
     text: String,
     weight: Float = 1f,
     color: Color = Color.Transparent,
-    align: TextAlign = TextAlign.Center
+    align: TextAlign = TextAlign.Center,
 ) {
     Text(
         text = text,
         modifier = Modifier.background(color).weight(weight),
         fontSize = 12.sp,
+        lineHeight = 15.sp,
         color = MaterialTheme.colors.secondary,
-        textAlign = align
+        textAlign = align, onTextLayout = {
+        }
     )
 }
 
@@ -252,6 +267,7 @@ fun RowScope.TaskText(
 fun TaskCard(
     modifier: Modifier = Modifier,
     task: TaskModel?,
+    onAction: (TaskAction) -> Unit,
     onRemoveTask: (taskId: String) -> Unit
 ) {
     Card(
@@ -259,34 +275,37 @@ fun TaskCard(
         border = BorderStroke(1.dp, MaterialTheme.colors.primary),
         shape = RectangleShape,
     ) {
-        Icon(
-            modifier = Modifier.padding(2.dp).size(16.dp)
-                .clickable { onRemoveTask(task?.taskId.orEmpty()) },
-            imageVector = Icons.Filled.Clear,
-            contentDescription = "Delete Task",
-            tint = MaterialTheme.colors.error
-        )
+        Row {
+            Icon(
+                modifier = Modifier.padding(start = 6.dp, 4.dp).size(18.dp)
+                    .clickable { onRemoveTask(task?.taskId.orEmpty()) },
+                imageVector = Icons.Filled.Edit,
+                contentDescription = "Edit Task",
+                tint = MaterialTheme.colors.primary
+            )
+            Icon(
+                modifier = Modifier.padding(start = 2.dp, 4.dp).size(18.dp)
+                    .clickable { onRemoveTask(task?.taskId.orEmpty()) },
+                imageVector = Icons.Filled.Clear,
+                contentDescription = "Delete Task",
+                tint = MaterialTheme.colors.error
+            )
+        }
         Row(
             modifier = Modifier.padding(8.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterHorizontally)
         ) {
-            TaskText(text = task?.taskId.orEmpty())
+            TaskText(text = "", weight = 0.3f)
+            TaskText(text = task?.taskCode.orEmpty())
             TaskText(text = "Sprint-${task?.sprintId}")
-            TaskText(text = task?.platform.orEmpty(), align = TextAlign.Center)
-            TaskText(
-                text = task?.summary.orEmpty(),
-                weight = 2f,
-                align = TextAlign.Start
-            )
-            TaskText(text = task?.storyPoint.toString(), align = TextAlign.Center)
-            TaskText(text = task?.developmentPoint.toString(), align = TextAlign.Center)
-            TaskText(text = task?.testPoint.toString(), align = TextAlign.Center)
+            TaskText(text = task?.platform.orEmpty())
+            TaskText(text = task?.summary.orEmpty(), weight = 2f)
+            TaskText(text = task?.storyPoint.toString())
+            TaskText(text = task?.developmentPoint.toString())
+            TaskText(text = task?.testPoint.toString())
             TaskText(text = task?.assignedTo.orEmpty())
-            TaskText(
-                text = task?.notes.orEmpty(),
-                align = TextAlign.Start
-            )
+            TaskText(text = task?.notes.orEmpty())
         }
     }
 }
