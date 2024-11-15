@@ -1,5 +1,7 @@
 package com.bcan.sprintplanner.ui
 
+import com.bcan.sprintplanner.data.models.TaskModel
+
 sealed class PlatformTypes(val name: String) {
     data object Unknown : PlatformTypes(name = "Unknown")
     data object AND : PlatformTypes(name = "Android")
@@ -16,6 +18,15 @@ sealed interface UiAction {
     data class UpdateTestPoint(val testPoint: String) : UiAction
     data class UpdateAssignedTo(val assignedTo: String) : UiAction
     data class UpdateNotes(val notes: String) : UiAction
+}
+
+sealed interface TaskAction {
+    data class UpdateTaskFields(
+        val sprintId: String,
+        val taskId: String,
+        val taskModel: TaskModel?
+    ) : TaskAction
+
 }
 
 val platformList = listOf(PlatformTypes.AND, PlatformTypes.IOS, PlatformTypes.TEST)
