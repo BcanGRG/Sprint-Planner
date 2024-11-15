@@ -75,7 +75,7 @@ class SprintScreen(val sprintId: String) : Screen {
                         taskModel = TaskModel(
                             taskId = viewModel.taskCode,
                             summary = viewModel.summary,
-                            platform = viewModel.platform.name,
+                            platform = viewModel.platform,
                             storyPoint = viewModel.storyPoint.toInt(),
                             developmentPoint = viewModel.developmentPoint.toInt(),
                             testPoint = viewModel.testPoint.toInt(),
