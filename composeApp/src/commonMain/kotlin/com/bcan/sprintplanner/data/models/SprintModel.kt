@@ -11,6 +11,7 @@ data class SprintModel(
 @Serializable
 data class TaskModel(
     val taskId: String? = null,
+    val sprintId: String? = null,
     val summary: String? = null,
     val platform: String? = null,
     val storyPoint: Int? = 0,
