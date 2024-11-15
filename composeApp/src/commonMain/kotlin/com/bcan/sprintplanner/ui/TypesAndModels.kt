@@ -31,5 +31,6 @@ val assignedList = listOf(
     "Mücahit",
     "Azime",
     "Yağmur",
-    "Burak"
+    "Burak",
+    "Davut"
 )
