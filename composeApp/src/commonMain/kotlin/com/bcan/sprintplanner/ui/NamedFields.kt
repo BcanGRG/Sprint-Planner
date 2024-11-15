@@ -7,6 +7,7 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +23,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun NamedDropdownField(
     fieldName: String,
-    value : String,
+    value: String,
     values: List<String>,
     onClickDropdownItem: (String) -> Unit,
 ) {
@@ -72,7 +73,7 @@ fun NamedDropdownField(
 @Composable
 fun NamedPlatformDropdownField(
     fieldName: String,
-    value : String,
+    value: String,
     values: List<PlatformTypes>,
     onClickDropdownItem: (PlatformTypes) -> Unit,
 ) {
@@ -114,5 +115,25 @@ fun NamedPlatformDropdownField(
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun NamedTextField(
+    fieldName: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(32.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(fieldName, modifier = Modifier.weight(3f))
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(7f)
+        )
     }
 }
