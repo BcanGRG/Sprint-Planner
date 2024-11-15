@@ -121,21 +121,28 @@ class SprintScreen(val sprintId: String) : Screen {
                         contentDescription = null,
                     )
                 }
-                Row(
-                    modifier = Modifier.align(Alignment.TopEnd)
-                        .clickable { createTaskDialogVisibility = true },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "Add Task Icon",
-                        modifier = Modifier.size(30.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Create New Task",
-                        style = MaterialTheme.typography.subtitle2,
-                    )
+                Text(
+                    "Sprint-$sprintId",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.h4
+                )
+                if (!(uiState.tasks.isNullOrEmpty() && !uiState.isLoading)) {
+                    Row(
+                        modifier = Modifier.align(Alignment.TopEnd)
+                            .clickable { createTaskDialogVisibility = true },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add Task Icon",
+                            modifier = Modifier.size(30.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Create New Task",
+                            style = MaterialTheme.typography.subtitle2,
+                        )
+                    }
                 }
             }
 
