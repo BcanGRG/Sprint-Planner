@@ -46,6 +46,7 @@ import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.ui.PlatformTypes
 import com.bcan.sprintplanner.ui.SelectionCard
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
+import com.bcan.sprintplanner.ui.UiAction
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
 import kotlinx.coroutines.launch
@@ -62,15 +63,6 @@ class SprintScreen(val sprintId: String) : Screen {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         var createTaskDialogVisibility by remember { mutableStateOf(false) }
-
-        var taskCode by remember { mutableStateOf("") }
-        var summary by remember { mutableStateOf("") }
-        var platform by remember { mutableStateOf<PlatformTypes>(PlatformTypes.Unknown) }
-        var storyPoint by remember { mutableStateOf("0") }
-        var developmentPoint by remember { mutableStateOf("0") }
-        var testPoint by remember { mutableStateOf("0") }
-        var assignedTo by remember { mutableStateOf("Unassigned") }
-        var notes by remember { mutableStateOf("") }
 
         if (uiState.isLoading) SprintPlannerLoadingIndicator()
 
@@ -107,8 +99,8 @@ class SprintScreen(val sprintId: String) : Screen {
                         ) {
                             Text("Task Code :", modifier = Modifier.weight(3f))
                             TextField(
-                                value = taskCode,
-                                onValueChange = { taskCode = it },
+                                value = viewModel.taskCode,
+                                onValueChange = { viewModel.onAction(UiAction.UpdateTaskCode(it)) },
                                 modifier = Modifier.weight(7f)
                             )
                         }
@@ -119,8 +111,8 @@ class SprintScreen(val sprintId: String) : Screen {
                         ) {
                             Text("Summary :", modifier = Modifier.weight(3f))
                             TextField(
-                                value = summary,
-                                onValueChange = { summary = it },
+                                value = viewModel.summary,
+                                onValueChange = { viewModel.onAction(UiAction.UpdateSummary(it)) },
                                 modifier = Modifier.weight(7f)
                             )
                         }
@@ -139,7 +131,8 @@ class SprintScreen(val sprintId: String) : Screen {
                                 onExpandedChange = { isDropDownExpanded = !isDropDownExpanded }
                             ) {
                                 SelectionCard(
-                                    value = platform.name, onClick = { isDropDownExpanded = true }
+                                    value = viewModel.platform.name,
+                                    onClick = { isDropDownExpanded = true }
                                 )
                                 DropdownMenu(
                                     modifier = Modifier.exposedDropdownSize(),
@@ -150,7 +143,7 @@ class SprintScreen(val sprintId: String) : Screen {
                                         DropdownMenuItem(
                                             enabled = true,
                                             onClick = {
-                                                platform = it
+                                                viewModel.onAction(UiAction.UpdatePlatform(it))
                                                 isDropDownExpanded = false
                                             }) {
                                             Text(
@@ -179,7 +172,8 @@ class SprintScreen(val sprintId: String) : Screen {
                                 onExpandedChange = { isDropDownExpanded = !isDropDownExpanded }
                             ) {
                                 SelectionCard(
-                                    value = storyPoint, onClick = { isDropDownExpanded = true }
+                                    value = viewModel.storyPoint,
+                                    onClick = { isDropDownExpanded = true }
                                 )
                                 DropdownMenu(
                                     modifier = Modifier.exposedDropdownSize(),
@@ -190,7 +184,7 @@ class SprintScreen(val sprintId: String) : Screen {
                                         DropdownMenuItem(
                                             enabled = true,
                                             onClick = {
-                                                storyPoint = it
+                                                viewModel.onAction(UiAction.UpdateStoryPoint(it))
                                                 isDropDownExpanded = false
                                             }) {
                                             Text(
@@ -211,8 +205,10 @@ class SprintScreen(val sprintId: String) : Screen {
                         ) {
                             Text("Development Point :", modifier = Modifier.weight(3f))
                             TextField(
-                                value = developmentPoint,
-                                onValueChange = { developmentPoint = it },
+                                value = viewModel.developmentPoint,
+                                onValueChange = {
+                                    viewModel.onAction(UiAction.UpdateDevelopmentPoint(it))
+                                },
                                 modifier = Modifier.weight(7f)
                             )
                         }
@@ -223,8 +219,8 @@ class SprintScreen(val sprintId: String) : Screen {
                         ) {
                             Text("Test Point :", modifier = Modifier.weight(3f))
                             TextField(
-                                value = testPoint,
-                                onValueChange = { testPoint = it },
+                                value = viewModel.testPoint,
+                                onValueChange = { viewModel.onAction(UiAction.UpdateTestPoint(it)) },
                                 modifier = Modifier.weight(7f)
                             )
                         }
@@ -235,8 +231,8 @@ class SprintScreen(val sprintId: String) : Screen {
                         ) {
                             Text("Assigned To :", modifier = Modifier.weight(3f))
                             TextField(
-                                value = assignedTo,
-                                onValueChange = { assignedTo = it },
+                                value = viewModel.assignedTo,
+                                onValueChange = { viewModel.onAction(UiAction.UpdateAssignedTo(it)) },
                                 modifier = Modifier.weight(7f)
                             )
                         }
@@ -248,23 +244,25 @@ class SprintScreen(val sprintId: String) : Screen {
                         ) {
                             Text("Notes :", modifier = Modifier.weight(3f))
                             TextField(
-                                value = notes,
-                                onValueChange = { notes = it },
+                                value = viewModel.notes,
+                                onValueChange = { viewModel.onAction(UiAction.UpdateNotes(it)) },
                                 modifier = Modifier.weight(7f)
                             )
                         }
 
                         Button(onClick = {
                             viewModel.createTask(
-                                sprintId, taskCode, TaskModel(
-                                    taskId = taskCode,
-                                    summary = summary,
-                                    platform = platform.name,
-                                    storyPoint = storyPoint.toInt(),
-                                    developmentPoint = developmentPoint.toInt(),
-                                    testPoint = testPoint.toInt(),
-                                    assignedTo = assignedTo,
-                                    notes = notes
+                                sprintId = sprintId,
+                                taskId = viewModel.taskCode,
+                                taskModel = TaskModel(
+                                    taskId = viewModel.taskCode,
+                                    summary = viewModel.summary,
+                                    platform = viewModel.platform.name,
+                                    storyPoint = viewModel.storyPoint.toInt(),
+                                    developmentPoint = viewModel.developmentPoint.toInt(),
+                                    testPoint = viewModel.testPoint.toInt(),
+                                    assignedTo = viewModel.assignedTo,
+                                    notes = viewModel.notes
                                 )
                             )
                             createTaskDialogVisibility = false

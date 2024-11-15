@@ -1,10 +1,15 @@
 package com.bcan.sprintplanner.presentation.sprint
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.bcan.sprintplanner.data.models.NetworkResult
 import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.data.repositories.SprintRepository
+import com.bcan.sprintplanner.ui.PlatformTypes
+import com.bcan.sprintplanner.ui.UiAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -17,6 +22,36 @@ class SprintViewModel(
 
     private val _uiState: MutableStateFlow<SprintUiState> = MutableStateFlow(SprintUiState())
     val uiState = _uiState.asStateFlow()
+
+    var taskCode by mutableStateOf("")
+        private set
+    var summary by mutableStateOf("")
+        private set
+    var platform by mutableStateOf<PlatformTypes>(PlatformTypes.Unknown)
+        private set
+    var storyPoint by mutableStateOf("0")
+        private set
+    var developmentPoint by mutableStateOf("0")
+        private set
+    var testPoint by mutableStateOf("0")
+        private set
+    var assignedTo by mutableStateOf("Unassigned")
+        private set
+    var notes by mutableStateOf("")
+        private set
+
+    fun onAction(action: UiAction) {
+        when (action) {
+            is UiAction.UpdateTaskCode -> taskCode = action.taskCode
+            is UiAction.UpdateSummary -> summary = action.summary
+            is UiAction.UpdatePlatform -> platform = action.platform
+            is UiAction.UpdateStoryPoint -> storyPoint = action.storyPoint
+            is UiAction.UpdateDevelopmentPoint -> developmentPoint = action.developmentPoint
+            is UiAction.UpdateTestPoint -> testPoint = action.testPoint
+            is UiAction.UpdateAssignedTo -> assignedTo = action.assignedTo
+            is UiAction.UpdateNotes -> notes = action.notes
+        }
+    }
 
     fun getTasks(sprintId: String) {
         screenModelScope.launch {
