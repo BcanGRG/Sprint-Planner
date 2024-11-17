@@ -30,7 +30,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,8 +57,13 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.presentation.sprint.components.CreateTaskDialog
 import com.bcan.sprintplanner.themes.onBackgroundLight
+import com.bcan.sprintplanner.ui.AssigneeFilterDropdownField
+import com.bcan.sprintplanner.ui.PlatformFilterDropdownField
+import com.bcan.sprintplanner.ui.PlatformTypes
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
 import com.bcan.sprintplanner.ui.TaskAction
+import com.bcan.sprintplanner.ui.filteredAssignedList
+import com.bcan.sprintplanner.ui.filteredPlatformList
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
 import kotlinx.coroutines.launch
@@ -70,6 +77,7 @@ class SprintScreen(val sprintId: String) : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel = koinScreenModel<SprintViewModel>()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val tasks by viewModel.tasks.collectAsStateWithLifecycle(emptyList())
 
         var createTaskDialogVisibility by remember { mutableStateOf(false) }
 
@@ -80,6 +88,9 @@ class SprintScreen(val sprintId: String) : Screen {
         if (uiState.errorMessage.isNullOrEmpty().not()) {
             scope.launch { SnackbarController.sendEvent(SnackbarEvent(uiState.errorMessage!!)) }
         }
+
+        var filteredPlatform by remember { mutableStateOf<PlatformTypes>(PlatformTypes.ALL) }
+        var filteredAssignee by remember { mutableStateOf("All") }
 
         val taskModel by remember {
             derivedStateOf {
@@ -118,7 +129,7 @@ class SprintScreen(val sprintId: String) : Screen {
                 })
         }
 
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 IconButton(
                     onClick = { navigator.pop() }
@@ -136,20 +147,44 @@ class SprintScreen(val sprintId: String) : Screen {
                 )
                 if (!(uiState.tasks.isNullOrEmpty() && !uiState.isLoading)) {
                     Row(
-                        modifier = Modifier.align(Alignment.TopEnd)
-                            .clickable { createTaskDialogVisibility = true },
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Add Task Icon",
-                            modifier = Modifier.size(30.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Create New Task",
-                            style = MaterialTheme.typography.subtitle2,
-                        )
+                        Row(
+                            modifier = Modifier.clickable { createTaskDialogVisibility = true },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AddCircle,
+                                contentDescription = "Add Task Icon",
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Create New Task",
+                                style = MaterialTheme.typography.subtitle2,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.clickable {
+                                filteredPlatform = PlatformTypes.ALL
+                                filteredAssignee = "All"
+                                viewModel.updatePlatformFilter(PlatformTypes.ALL)
+                                viewModel.updateAssigneeFilter("All")
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Clear Filters Icon",
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Clear All Filters",
+                                style = MaterialTheme.typography.subtitle2,
+                            )
+                        }
                     }
                 }
             }
@@ -174,8 +209,30 @@ class SprintScreen(val sprintId: String) : Screen {
                         }
                     }
                 } else Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+                    ) {
+                        PlatformFilterDropdownField(
+                            value = filteredPlatform.name,
+                            values = filteredPlatformList,
+                            onClickDropdownItem = {
+                                filteredPlatform = it
+                                viewModel.updatePlatformFilter(it)
+                            }
+                        )
+                        AssigneeFilterDropdownField(
+                            value = filteredAssignee,
+                            values = filteredAssignedList,
+                            onClickDropdownItem = {
+                                filteredAssignee = it
+                                viewModel.updateAssigneeFilter(it)
+                            }
+                        )
+                    }
+
                     TasksListSection(
-                        tasks = uiState.tasks!!,
+                        tasks = tasks,
                         onAction = viewModel::onUpdateFieldAction,
                         onRemoveTask = { taskId ->
                             viewModel.deleteTask(sprintId, taskId)
@@ -216,7 +273,7 @@ fun ColumnScope.TasksListSection(
                     HeaderText(text = "Story Point")
                     HeaderText(text = "Development\nPoint")
                     HeaderText(text = "Test Point")
-                    HeaderText(text = "Assigned")
+                    HeaderText(text = "Assigned To")
                     HeaderText(text = "Notes")
                 }
             }
@@ -247,19 +304,19 @@ fun RowScope.HeaderText(
 
 @Composable
 fun RowScope.TaskText(
+    modifier: Modifier = Modifier,
     text: String,
     weight: Float = 1f,
-    color: Color = Color.Transparent,
+    textColor: Color = MaterialTheme.colors.secondary,
     align: TextAlign = TextAlign.Center,
 ) {
     Text(
         text = text,
-        modifier = Modifier.background(color).weight(weight),
+        modifier = Modifier.weight(weight).then(modifier),
         fontSize = 12.sp,
         lineHeight = 15.sp,
-        color = MaterialTheme.colors.secondary,
-        textAlign = align, onTextLayout = {
-        }
+        color = textColor,
+        textAlign = align,
     )
 }
 
@@ -299,7 +356,14 @@ fun TaskCard(
             TaskText(text = "", weight = 0.3f)
             TaskText(text = task?.taskCode.orEmpty())
             TaskText(text = "Sprint-${task?.sprintId}")
-            TaskText(text = task?.platform.orEmpty())
+            TaskText(
+                text = task?.platform.orEmpty(),
+                modifier = Modifier.background(
+                    MaterialTheme.colors.secondary,
+                    RoundedCornerShape(16.dp)
+                ).padding(vertical = 8.dp),
+                textColor = MaterialTheme.colors.onPrimary
+            )
             TaskText(text = task?.summary.orEmpty(), weight = 2f)
             TaskText(text = task?.storyPoint.toString())
             TaskText(text = task?.developmentPoint.toString())

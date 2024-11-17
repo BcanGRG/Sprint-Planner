@@ -11,9 +11,14 @@ import com.bcan.sprintplanner.data.repositories.SprintRepository
 import com.bcan.sprintplanner.ui.PlatformTypes
 import com.bcan.sprintplanner.ui.TaskAction
 import com.bcan.sprintplanner.ui.UiAction
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -23,6 +28,28 @@ class SprintViewModel(
 
     private val _uiState: MutableStateFlow<SprintUiState> = MutableStateFlow(SprintUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _selectedPlatform = MutableStateFlow<PlatformTypes>(PlatformTypes.ALL)
+    val selectedPlatform: StateFlow<PlatformTypes> = _selectedPlatform.asStateFlow()
+
+    private val _selectedAssignee = MutableStateFlow("All")
+    val selectedAssignee: StateFlow<String> = _selectedAssignee.asStateFlow()
+
+    private val _tasks = MutableStateFlow<List<TaskModel>>(emptyList())
+    val tasks: Flow<List<TaskModel>> = combine(
+        _tasks,
+        _selectedPlatform,
+        _selectedAssignee
+    ) { tasks, platform, assignee ->
+        tasks.filter {
+            (if (platform != PlatformTypes.ALL) it.platform == platform.name else true) &&
+                    (if (assignee != "All") it.assignedTo == assignee else true)
+        }
+    }.stateIn(
+        screenModelScope,
+        SharingStarted.WhileSubscribed(2000),
+        _tasks.value
+    )
 
     var taskCode by mutableStateOf("")
         private set
@@ -68,6 +95,14 @@ class SprintViewModel(
         }
     }
 
+    fun updatePlatformFilter(platform: PlatformTypes) {
+        _selectedPlatform.value = platform
+    }
+
+    fun updateAssigneeFilter(assignee: String) {
+        _selectedAssignee.value = assignee
+    }
+
     fun getTasks(sprintId: String) {
         screenModelScope.launch {
             sprintRepository.getTasks(sprintId).collectLatest { result ->
@@ -89,6 +124,7 @@ class SprintViewModel(
                                 tasks = result.data
                             )
                         }
+                        result.data?.let { _tasks.emit(it) }
                     }
 
                     is NetworkResult.OnError -> {
