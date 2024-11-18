@@ -30,6 +30,12 @@ sealed interface TaskAction {
 
 }
 
+data class PointsModel(
+    val totalStoryPoint: Int = 0,
+    val totalDevelopmentPoint: Int = 0,
+    val totalTestPoint: Int = 0,
+)
+
 val platformList = listOf(PlatformTypes.AND, PlatformTypes.IOS, PlatformTypes.TEST)
 val pointsList = listOf("1", "2", "3", "5", "8", "13", "21", "34")
 val assignedList = listOf(
