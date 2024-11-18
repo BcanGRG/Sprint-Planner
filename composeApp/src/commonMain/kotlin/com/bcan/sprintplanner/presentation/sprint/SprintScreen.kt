@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -85,7 +87,10 @@ class SprintScreen(val sprintId: String) : Screen {
 
         var createTaskDialogVisibility by remember { mutableStateOf(false) }
 
-        LaunchedEffect(Unit) { viewModel.getTasks(sprintId) }
+        LaunchedEffect(Unit) {
+            viewModel.getTasks(sprintId = sprintId)
+            viewModel.getSprintProperties(sprintId = sprintId)
+        }
 
         if (uiState.isLoading) SprintPlannerLoadingIndicator()
 
@@ -224,10 +229,25 @@ class SprintScreen(val sprintId: String) : Screen {
                             )
                         }
                     }
-                } else Row(modifier = Modifier.fillMaxSize()) {
+                } else Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Column(
                         modifier = Modifier.weight(0.25f).fillMaxHeight()
-                    ) { }
+                    ) {
+                        if (uiState.sprintModel?.sprintNotes != null) {
+                            EditableSprintNoteCard(
+                                sprintNotes = uiState.sprintModel?.sprintNotes.orEmpty(),
+                                onUpdateNotes = {
+                                    viewModel.updateSprintProperties(
+                                        sprintId,
+                                        uiState.sprintModel!!.copy(sprintNotes = it)
+                                    )
+                                }
+                            )
+                        }
+                    }
                     Column(modifier = Modifier.weight(0.75f)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -457,6 +477,76 @@ fun PointCard(
                 style = MaterialTheme.typography.h4,
                 fontWeight = FontWeight.Bold
             )
+        }
+    }
+}
+
+@Composable
+fun EditableSprintNoteCard(
+    sprintNotes: String,
+    onUpdateNotes: (String) -> Unit,
+) {
+
+    var editableNotes by remember { mutableStateOf(sprintNotes) }
+    var isEditing by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colors.primaryVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Sprint Notes",
+                    style = MaterialTheme.typography.h6,
+                    fontStyle = FontStyle.Italic
+                )
+                if (isEditing) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Done,
+                            contentDescription = "Done Icon",
+                            modifier = Modifier.clickable {
+                                onUpdateNotes(editableNotes)
+                                isEditing = false
+                            })
+
+                        Icon(
+                            imageVector = Icons.Filled.Clear,
+                            contentDescription = "Clear Icon",
+                            modifier = Modifier.clickable {
+                                isEditing = false
+                                editableNotes = sprintNotes
+                            })
+                    }
+                }
+            }
+
+            if (isEditing) {
+                BasicTextField(
+                    value = editableNotes,
+                    onValueChange = { editableNotes = it },
+                    textStyle = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+            } else {
+                Text(
+                    text = editableNotes,
+                    style = MaterialTheme.typography.body2,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { isEditing = true }
+                )
+            }
         }
     }
 }
