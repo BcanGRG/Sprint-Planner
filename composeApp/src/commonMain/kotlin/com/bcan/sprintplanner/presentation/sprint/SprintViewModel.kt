@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.bcan.sprintplanner.data.models.NetworkResult
+import com.bcan.sprintplanner.data.models.SprintModel
 import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.data.repositories.SprintRepository
 import com.bcan.sprintplanner.ui.PlatformTypes
@@ -140,6 +141,42 @@ class SprintViewModel(
         }
     }
 
+    fun getSprintProperties(sprintId: String) {
+        screenModelScope.launch {
+            sprintRepository.getSprintProperties(sprintId).collectLatest { result ->
+                when (result) {
+                    is NetworkResult.OnLoading -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = true,
+                                errorMessage = null
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnSuccess -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = null,
+                                sprintModel = result.data
+                            )
+                        }
+                    }
+
+                    is NetworkResult.OnError -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun createTask(
         sprintId: String,
         taskModel: TaskModel
@@ -226,10 +263,35 @@ class SprintViewModel(
             }
         }
     }
+
+    fun updateSprintProperties(
+        sprintId: String,
+        sprintModel: SprintModel,
+    ) {
+        screenModelScope.launch {
+            sprintRepository.updateSprintProperties(sprintId, sprintModel).collectLatest { result ->
+                when (result) {
+                    is NetworkResult.OnLoading -> {}
+
+                    is NetworkResult.OnSuccess -> {}
+
+                    is NetworkResult.OnError -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 data class SprintUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val tasks: List<TaskModel>? = emptyList(),
+    val sprintModel: SprintModel? = null,
 )

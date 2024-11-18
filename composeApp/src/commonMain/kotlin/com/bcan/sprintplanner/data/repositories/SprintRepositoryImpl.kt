@@ -1,6 +1,7 @@
 package com.bcan.sprintplanner.data.repositories
 
 import com.bcan.sprintplanner.data.models.NetworkResult
+import com.bcan.sprintplanner.data.models.SprintModel
 import com.bcan.sprintplanner.data.models.TaskModel
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,20 @@ class SprintRepositoryImpl(
             emit(NetworkResult.OnError(e.message))
         }
     }
+
+    override suspend fun getSprintProperties(sprintId: String): Flow<NetworkResult<SprintModel>> =
+        flow {
+            emit(NetworkResult.OnLoading)
+            try {
+                firestore.collection("Sprints").document(sprintId).snapshots.collect { document ->
+                    val result = document.data<SprintModel>()
+                    emit(NetworkResult.OnSuccess(result, ""))
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(NetworkResult.OnError(e.message))
+            }
+        }
 
     override suspend fun createTask(
         sprintId: String,
@@ -63,6 +78,19 @@ class SprintRepositoryImpl(
         try {
             firestore.collection("Sprints").document(sprintId)
                 .collection("Tasks").document(taskId).update(taskModel)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emit(NetworkResult.OnError(e.message))
+        }
+    }
+
+    override suspend fun updateSprintProperties(
+        sprintId: String,
+        sprintModel: SprintModel
+    ): Flow<NetworkResult<Any>> = flow {
+        emit(NetworkResult.OnLoading)
+        try {
+            firestore.collection("Sprints").document(sprintId).update(sprintModel)
         } catch (e: Exception) {
             e.printStackTrace()
             emit(NetworkResult.OnError(e.message))
