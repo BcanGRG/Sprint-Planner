@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class SprintModel(
     val sprintId: Int? = null,
     val holidayCount: Double? = 0.0,
+    val sprintNotes: String? = null,
 )
 
 @Serializable
