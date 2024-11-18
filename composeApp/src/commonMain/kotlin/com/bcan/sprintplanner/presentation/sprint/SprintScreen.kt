@@ -46,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,10 +58,12 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.presentation.sprint.components.CreateTaskDialog
+import com.bcan.sprintplanner.presentation.sprint.components.EditTaskDialog
 import com.bcan.sprintplanner.themes.onBackgroundLight
 import com.bcan.sprintplanner.ui.AssigneeFilterDropdownField
 import com.bcan.sprintplanner.ui.PlatformFilterDropdownField
 import com.bcan.sprintplanner.ui.PlatformTypes
+import com.bcan.sprintplanner.ui.PointsModel
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
 import com.bcan.sprintplanner.ui.TaskAction
 import com.bcan.sprintplanner.ui.filteredAssignedList
@@ -104,6 +108,18 @@ class SprintScreen(val sprintId: String) : Screen {
                     testPoint = viewModel.testPoint.toInt(),
                     assignedTo = viewModel.assignedTo,
                     notes = viewModel.notes
+                )
+            }
+        }
+        val points by remember {
+            derivedStateOf {
+                val totalStoryPoint = tasks.sumOf { it.storyPoint ?: 0 }
+                val totalDevelopmentPoint = tasks.sumOf { it.developmentPoint ?: 0 }
+                val totalTestPoint = tasks.sumOf { it.testPoint ?: 0 }
+                PointsModel(
+                    totalStoryPoint = totalStoryPoint,
+                    totalDevelopmentPoint = totalDevelopmentPoint,
+                    totalTestPoint = totalTestPoint
                 )
             }
         }
@@ -208,36 +224,58 @@ class SprintScreen(val sprintId: String) : Screen {
                             )
                         }
                     }
-                } else Column(modifier = Modifier.fillMaxSize()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
-                    ) {
-                        PlatformFilterDropdownField(
-                            value = filteredPlatform.name,
-                            values = filteredPlatformList,
-                            onClickDropdownItem = {
-                                filteredPlatform = it
-                                viewModel.updatePlatformFilter(it)
-                            }
-                        )
-                        AssigneeFilterDropdownField(
-                            value = filteredAssignee,
-                            values = filteredAssignedList,
-                            onClickDropdownItem = {
-                                filteredAssignee = it
-                                viewModel.updateAssigneeFilter(it)
-                            }
-                        )
-                    }
-
-                    TasksListSection(
-                        tasks = tasks,
-                        onAction = viewModel::onUpdateFieldAction,
-                        onRemoveTask = { taskId ->
-                            viewModel.deleteTask(sprintId, taskId)
+                } else Row(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier.weight(0.25f).fillMaxHeight()
+                    ) { }
+                    Column(modifier = Modifier.weight(0.75f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+                        ) {
+                            PlatformFilterDropdownField(
+                                value = filteredPlatform.name,
+                                values = filteredPlatformList,
+                                onClickDropdownItem = {
+                                    filteredPlatform = it
+                                    viewModel.updatePlatformFilter(it)
+                                }
+                            )
+                            AssigneeFilterDropdownField(
+                                value = filteredAssignee,
+                                values = filteredAssignedList,
+                                onClickDropdownItem = {
+                                    filteredAssignee = it
+                                    viewModel.updateAssigneeFilter(it)
+                                }
+                            )
                         }
-                    )
+
+                        TasksListSection(
+                            tasks = tasks,
+                            onAction = viewModel::onUpdateFieldAction,
+                            onRemoveTask = { taskId ->
+                                viewModel.deleteTask(sprintId, taskId)
+                            }
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            PointCard(
+                                modifier = Modifier.weight(1f),
+                                fieldName = "Total Story Points",
+                                point = points.totalStoryPoint,
+                            )
+                            PointCard(
+                                modifier = Modifier.weight(1f),
+                                fieldName = "Total Development Points",
+                                point = points.totalDevelopmentPoint,
+                            )
+                            PointCard(
+                                modifier = Modifier.weight(1f),
+                                fieldName = "Total Test Points",
+                                point = points.totalTestPoint,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -252,8 +290,7 @@ fun ColumnScope.TasksListSection(
     onRemoveTask: (taskId: String) -> Unit
 ) {
     Surface(
-        modifier = Modifier.align(Alignment.End).padding(vertical = 8.dp)
-            .fillMaxWidth(0.75f).fillMaxHeight(0.7f),
+        modifier = Modifier.align(Alignment.End).padding(vertical = 8.dp).fillMaxHeight(0.7f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(2.dp, MaterialTheme.colors.primary)
     ) {
@@ -327,6 +364,26 @@ fun TaskCard(
     onAction: (TaskAction) -> Unit,
     onRemoveTask: (taskId: String) -> Unit
 ) {
+
+    var editTaskDialogVisibility by remember { mutableStateOf(false) }
+
+    if (editTaskDialogVisibility && task?.taskId != null && task.sprintId != null) {
+        EditTaskDialog(
+            task = task,
+            onDismissRequest = { editTaskDialogVisibility = false },
+            onUpdateTask = { taskModel ->
+                onAction(
+                    TaskAction.UpdateTaskFields(
+                        taskModel = taskModel,
+                        taskId = task.taskId,
+                        sprintId = task.sprintId
+                    )
+                )
+                editTaskDialogVisibility = false
+            }
+        )
+    }
+
     Card(
         modifier = modifier,
         border = BorderStroke(1.dp, MaterialTheme.colors.primary),
@@ -335,7 +392,7 @@ fun TaskCard(
         Row {
             Icon(
                 modifier = Modifier.padding(start = 6.dp, 4.dp).size(18.dp)
-                    .clickable { onRemoveTask(task?.taskId.orEmpty()) },
+                    .clickable { editTaskDialogVisibility = true },
                 imageVector = Icons.Filled.Edit,
                 contentDescription = "Edit Task",
                 tint = MaterialTheme.colors.primary
@@ -358,7 +415,7 @@ fun TaskCard(
             TaskText(text = "Sprint-${task?.sprintId}")
             TaskText(
                 text = task?.platform.orEmpty(),
-                modifier = Modifier.background(
+                modifier = Modifier.padding(horizontal = 12.dp).background(
                     MaterialTheme.colors.secondary,
                     RoundedCornerShape(16.dp)
                 ).padding(vertical = 8.dp),
@@ -370,6 +427,36 @@ fun TaskCard(
             TaskText(text = task?.testPoint.toString())
             TaskText(text = task?.assignedTo.orEmpty())
             TaskText(text = task?.notes.orEmpty())
+        }
+    }
+}
+
+@Composable
+fun PointCard(
+    modifier: Modifier = Modifier,
+    fieldName: String,
+    point: Int
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colors.primaryVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = fieldName,
+                style = MaterialTheme.typography.h6,
+                fontStyle = FontStyle.Italic
+            )
+            Text(
+                text = point.toString(),
+                style = MaterialTheme.typography.h4,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
