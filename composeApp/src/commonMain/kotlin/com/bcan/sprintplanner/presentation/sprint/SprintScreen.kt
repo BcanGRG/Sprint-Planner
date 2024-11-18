@@ -33,7 +33,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
@@ -72,6 +71,8 @@ import com.bcan.sprintplanner.ui.filteredAssignedList
 import com.bcan.sprintplanner.ui.filteredPlatformList
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
+import compose.icons.TablerIcons
+import compose.icons.tablericons.FilterOff
 import kotlinx.coroutines.launch
 
 class SprintScreen(val sprintId: String) : Screen {
@@ -196,7 +197,7 @@ class SprintScreen(val sprintId: String) : Screen {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Delete,
+                                imageVector = TablerIcons.FilterOff,
                                 contentDescription = "Clear Filters Icon",
                                 modifier = Modifier.size(30.dp)
                             )
