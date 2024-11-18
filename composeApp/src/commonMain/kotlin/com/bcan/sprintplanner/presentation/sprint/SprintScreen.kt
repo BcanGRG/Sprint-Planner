@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -30,7 +31,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,11 +59,20 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.data.models.TaskModel
 import com.bcan.sprintplanner.presentation.sprint.components.CreateTaskDialog
+import com.bcan.sprintplanner.presentation.sprint.components.EditTaskDialog
 import com.bcan.sprintplanner.themes.onBackgroundLight
+import com.bcan.sprintplanner.ui.AssigneeFilterDropdownField
+import com.bcan.sprintplanner.ui.PlatformFilterDropdownField
+import com.bcan.sprintplanner.ui.PlatformTypes
+import com.bcan.sprintplanner.ui.PointsModel
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
 import com.bcan.sprintplanner.ui.TaskAction
+import com.bcan.sprintplanner.ui.filteredAssignedList
+import com.bcan.sprintplanner.ui.filteredPlatformList
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
+import compose.icons.TablerIcons
+import compose.icons.tablericons.FilterOff
 import kotlinx.coroutines.launch
 
 class SprintScreen(val sprintId: String) : Screen {
@@ -70,16 +84,23 @@ class SprintScreen(val sprintId: String) : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel = koinScreenModel<SprintViewModel>()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val tasks by viewModel.tasks.collectAsStateWithLifecycle(emptyList())
 
         var createTaskDialogVisibility by remember { mutableStateOf(false) }
 
-        LaunchedEffect(Unit) { viewModel.getTasks(sprintId) }
+        LaunchedEffect(Unit) {
+            viewModel.getTasks(sprintId = sprintId)
+            viewModel.getSprintProperties(sprintId = sprintId)
+        }
 
         if (uiState.isLoading) SprintPlannerLoadingIndicator()
 
         if (uiState.errorMessage.isNullOrEmpty().not()) {
             scope.launch { SnackbarController.sendEvent(SnackbarEvent(uiState.errorMessage!!)) }
         }
+
+        var filteredPlatform by remember { mutableStateOf<PlatformTypes>(PlatformTypes.ALL) }
+        var filteredAssignee by remember { mutableStateOf("All") }
 
         val taskModel by remember {
             derivedStateOf {
@@ -93,6 +114,18 @@ class SprintScreen(val sprintId: String) : Screen {
                     testPoint = viewModel.testPoint.toInt(),
                     assignedTo = viewModel.assignedTo,
                     notes = viewModel.notes
+                )
+            }
+        }
+        val points by remember {
+            derivedStateOf {
+                val totalStoryPoint = tasks.sumOf { it.storyPoint ?: 0 }
+                val totalDevelopmentPoint = tasks.sumOf { it.developmentPoint ?: 0 }
+                val totalTestPoint = tasks.sumOf { it.testPoint ?: 0 }
+                PointsModel(
+                    totalStoryPoint = totalStoryPoint,
+                    totalDevelopmentPoint = totalDevelopmentPoint,
+                    totalTestPoint = totalTestPoint
                 )
             }
         }
@@ -118,7 +151,7 @@ class SprintScreen(val sprintId: String) : Screen {
                 })
         }
 
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 IconButton(
                     onClick = { navigator.pop() }
@@ -136,20 +169,44 @@ class SprintScreen(val sprintId: String) : Screen {
                 )
                 if (!(uiState.tasks.isNullOrEmpty() && !uiState.isLoading)) {
                     Row(
-                        modifier = Modifier.align(Alignment.TopEnd)
-                            .clickable { createTaskDialogVisibility = true },
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Add Task Icon",
-                            modifier = Modifier.size(30.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Create New Task",
-                            style = MaterialTheme.typography.subtitle2,
-                        )
+                        Row(
+                            modifier = Modifier.clickable { createTaskDialogVisibility = true },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AddCircle,
+                                contentDescription = "Add Task Icon",
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Create New Task",
+                                style = MaterialTheme.typography.subtitle2,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.clickable {
+                                filteredPlatform = PlatformTypes.ALL
+                                filteredAssignee = "All"
+                                viewModel.updatePlatformFilter(PlatformTypes.ALL)
+                                viewModel.updateAssigneeFilter("All")
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = TablerIcons.FilterOff,
+                                contentDescription = "Clear Filters Icon",
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Clear All Filters",
+                                style = MaterialTheme.typography.subtitle2,
+                            )
+                        }
                     }
                 }
             }
@@ -173,14 +230,73 @@ class SprintScreen(val sprintId: String) : Screen {
                             )
                         }
                     }
-                } else Column(modifier = Modifier.fillMaxSize()) {
-                    TasksListSection(
-                        tasks = uiState.tasks!!,
-                        onAction = viewModel::onUpdateFieldAction,
-                        onRemoveTask = { taskId ->
-                            viewModel.deleteTask(sprintId, taskId)
+                } else Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.weight(0.25f).fillMaxHeight()
+                    ) {
+                        if (uiState.sprintModel?.sprintNotes != null) {
+                            EditableSprintNoteCard(
+                                sprintNotes = uiState.sprintModel?.sprintNotes.orEmpty(),
+                                onUpdateNotes = {
+                                    viewModel.updateSprintProperties(
+                                        sprintId,
+                                        uiState.sprintModel!!.copy(sprintNotes = it)
+                                    )
+                                }
+                            )
                         }
-                    )
+                    }
+                    Column(modifier = Modifier.weight(0.75f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+                        ) {
+                            PlatformFilterDropdownField(
+                                value = filteredPlatform.name,
+                                values = filteredPlatformList,
+                                onClickDropdownItem = {
+                                    filteredPlatform = it
+                                    viewModel.updatePlatformFilter(it)
+                                }
+                            )
+                            AssigneeFilterDropdownField(
+                                value = filteredAssignee,
+                                values = filteredAssignedList,
+                                onClickDropdownItem = {
+                                    filteredAssignee = it
+                                    viewModel.updateAssigneeFilter(it)
+                                }
+                            )
+                        }
+
+                        TasksListSection(
+                            tasks = tasks,
+                            onAction = viewModel::onUpdateFieldAction,
+                            onRemoveTask = { taskId ->
+                                viewModel.deleteTask(sprintId, taskId)
+                            }
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            PointCard(
+                                modifier = Modifier.weight(1f),
+                                fieldName = "Total Story Points",
+                                point = points.totalStoryPoint,
+                            )
+                            PointCard(
+                                modifier = Modifier.weight(1f),
+                                fieldName = "Total Development Points",
+                                point = points.totalDevelopmentPoint,
+                            )
+                            PointCard(
+                                modifier = Modifier.weight(1f),
+                                fieldName = "Total Test Points",
+                                point = points.totalTestPoint,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -195,8 +311,7 @@ fun ColumnScope.TasksListSection(
     onRemoveTask: (taskId: String) -> Unit
 ) {
     Surface(
-        modifier = Modifier.align(Alignment.End).padding(vertical = 8.dp)
-            .fillMaxWidth(0.75f).fillMaxHeight(0.7f),
+        modifier = Modifier.align(Alignment.End).padding(vertical = 8.dp).fillMaxHeight(0.7f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(2.dp, MaterialTheme.colors.primary)
     ) {
@@ -216,7 +331,7 @@ fun ColumnScope.TasksListSection(
                     HeaderText(text = "Story Point")
                     HeaderText(text = "Development\nPoint")
                     HeaderText(text = "Test Point")
-                    HeaderText(text = "Assigned")
+                    HeaderText(text = "Assigned To")
                     HeaderText(text = "Notes")
                 }
             }
@@ -247,19 +362,19 @@ fun RowScope.HeaderText(
 
 @Composable
 fun RowScope.TaskText(
+    modifier: Modifier = Modifier,
     text: String,
     weight: Float = 1f,
-    color: Color = Color.Transparent,
+    textColor: Color = MaterialTheme.colors.secondary,
     align: TextAlign = TextAlign.Center,
 ) {
     Text(
         text = text,
-        modifier = Modifier.background(color).weight(weight),
+        modifier = Modifier.weight(weight).then(modifier),
         fontSize = 12.sp,
         lineHeight = 15.sp,
-        color = MaterialTheme.colors.secondary,
-        textAlign = align, onTextLayout = {
-        }
+        color = textColor,
+        textAlign = align,
     )
 }
 
@@ -270,6 +385,26 @@ fun TaskCard(
     onAction: (TaskAction) -> Unit,
     onRemoveTask: (taskId: String) -> Unit
 ) {
+
+    var editTaskDialogVisibility by remember { mutableStateOf(false) }
+
+    if (editTaskDialogVisibility && task?.taskId != null && task.sprintId != null) {
+        EditTaskDialog(
+            task = task,
+            onDismissRequest = { editTaskDialogVisibility = false },
+            onUpdateTask = { taskModel ->
+                onAction(
+                    TaskAction.UpdateTaskFields(
+                        taskModel = taskModel,
+                        taskId = task.taskId,
+                        sprintId = task.sprintId
+                    )
+                )
+                editTaskDialogVisibility = false
+            }
+        )
+    }
+
     Card(
         modifier = modifier,
         border = BorderStroke(1.dp, MaterialTheme.colors.primary),
@@ -278,7 +413,7 @@ fun TaskCard(
         Row {
             Icon(
                 modifier = Modifier.padding(start = 6.dp, 4.dp).size(18.dp)
-                    .clickable { onRemoveTask(task?.taskId.orEmpty()) },
+                    .clickable { editTaskDialogVisibility = true },
                 imageVector = Icons.Filled.Edit,
                 contentDescription = "Edit Task",
                 tint = MaterialTheme.colors.primary
@@ -299,13 +434,120 @@ fun TaskCard(
             TaskText(text = "", weight = 0.3f)
             TaskText(text = task?.taskCode.orEmpty())
             TaskText(text = "Sprint-${task?.sprintId}")
-            TaskText(text = task?.platform.orEmpty())
+            TaskText(
+                text = task?.platform.orEmpty(),
+                modifier = Modifier.padding(horizontal = 12.dp).background(
+                    MaterialTheme.colors.secondary,
+                    RoundedCornerShape(16.dp)
+                ).padding(vertical = 8.dp),
+                textColor = MaterialTheme.colors.onPrimary
+            )
             TaskText(text = task?.summary.orEmpty(), weight = 2f)
             TaskText(text = task?.storyPoint.toString())
             TaskText(text = task?.developmentPoint.toString())
             TaskText(text = task?.testPoint.toString())
             TaskText(text = task?.assignedTo.orEmpty())
             TaskText(text = task?.notes.orEmpty())
+        }
+    }
+}
+
+@Composable
+fun PointCard(
+    modifier: Modifier = Modifier,
+    fieldName: String,
+    point: Int
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colors.primaryVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = fieldName,
+                style = MaterialTheme.typography.h6,
+                fontStyle = FontStyle.Italic
+            )
+            Text(
+                text = point.toString(),
+                style = MaterialTheme.typography.h4,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun EditableSprintNoteCard(
+    sprintNotes: String,
+    onUpdateNotes: (String) -> Unit,
+) {
+
+    var editableNotes by remember { mutableStateOf(sprintNotes) }
+    var isEditing by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colors.primaryVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Sprint Notes",
+                    style = MaterialTheme.typography.h6,
+                    fontStyle = FontStyle.Italic
+                )
+                if (isEditing) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Done,
+                            contentDescription = "Done Icon",
+                            modifier = Modifier.clickable {
+                                onUpdateNotes(editableNotes)
+                                isEditing = false
+                            })
+
+                        Icon(
+                            imageVector = Icons.Filled.Clear,
+                            contentDescription = "Clear Icon",
+                            modifier = Modifier.clickable {
+                                isEditing = false
+                                editableNotes = sprintNotes
+                            })
+                    }
+                }
+            }
+
+            if (isEditing) {
+                BasicTextField(
+                    value = editableNotes,
+                    onValueChange = { editableNotes = it },
+                    textStyle = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+            } else {
+                Text(
+                    text = editableNotes,
+                    style = MaterialTheme.typography.body2,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { isEditing = true }
+                )
+            }
         }
     }
 }

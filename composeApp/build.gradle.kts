@@ -43,6 +43,9 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.gitlive.firebase.firestore)
 
+            //Icons
+            implementation(libs.composeIcons.tablerIcons)
+
             //Koin
             api(libs.koin.core)
             implementation(libs.koin.compose)

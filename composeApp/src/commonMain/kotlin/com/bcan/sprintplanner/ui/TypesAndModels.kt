@@ -7,6 +7,7 @@ sealed class PlatformTypes(val name: String) {
     data object AND : PlatformTypes(name = "Android")
     data object IOS : PlatformTypes(name = "iOS")
     data object TEST : PlatformTypes(name = "Test")
+    data object ALL : PlatformTypes(name = "All")
 }
 
 sealed interface UiAction {
@@ -29,6 +30,12 @@ sealed interface TaskAction {
 
 }
 
+data class PointsModel(
+    val totalStoryPoint: Int = 0,
+    val totalDevelopmentPoint: Int = 0,
+    val totalTestPoint: Int = 0,
+)
+
 val platformList = listOf(PlatformTypes.AND, PlatformTypes.IOS, PlatformTypes.TEST)
 val pointsList = listOf("1", "2", "3", "5", "8", "13", "21", "34")
 val assignedList = listOf(
@@ -45,3 +52,22 @@ val assignedList = listOf(
     "Burak",
     "Davut"
 )
+
+val filteredAssignedList = listOf(
+    "All",
+    "Unassigned",
+    "Ali Han",
+    "Melisa",
+    "Cihan",
+    "Tarık",
+    "Burak Can",
+    "Tuğba",
+    "Mücahit",
+    "Azime",
+    "Yağmur",
+    "Burak",
+    "Davut"
+)
+
+val filteredPlatformList =
+    listOf(PlatformTypes.ALL, PlatformTypes.AND, PlatformTypes.IOS, PlatformTypes.TEST)

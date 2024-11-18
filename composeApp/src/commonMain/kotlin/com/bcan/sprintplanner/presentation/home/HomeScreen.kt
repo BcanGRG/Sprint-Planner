@@ -24,7 +24,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -49,10 +48,15 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.data.models.SprintModel
 import com.bcan.sprintplanner.presentation.sprint.SprintScreen
+import com.bcan.sprintplanner.themes.secondaryLight
+import com.bcan.sprintplanner.ui.NamedTextField
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import sprintplanner.composeapp.generated.resources.Res
+import sprintplanner.composeapp.generated.resources.app_title
 
 class HomeScreen : Screen {
     @Composable
@@ -79,6 +83,7 @@ class HomeScreen : Screen {
                 )
             ) {
                 var sprintNumber by remember { mutableStateOf("") }
+                var sprintNotes by remember { mutableStateOf("") }
                 var holiday by remember { mutableStateOf("0.0") }
 
                 Box(
@@ -94,29 +99,25 @@ class HomeScreen : Screen {
                             alignment = Alignment.CenterVertically
                         ), horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Sprint Number :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = sprintNumber,
-                                onValueChange = { sprintNumber = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Holiday Count :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = holiday,
-                                onValueChange = { holiday = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
+                        NamedTextField(
+                            fieldName = "Sprint Number :",
+                            value = sprintNumber,
+                            onValueChange = { sprintNumber = it }
+                        )
+
+                        NamedTextField(
+                            fieldName = "Sprint Notes :",
+                            value = sprintNotes,
+                            onValueChange = { sprintNotes = it }
+                        )
+
+                        NamedTextField(
+                            fieldName = "Holiday Count :",
+                            value = holiday,
+                            onValueChange = { holiday = it }
+                        )
+
 
                         Button(onClick = {
                             if (viewModel.checkDocumentExists(sprintNumber.toInt())) {
@@ -125,7 +126,8 @@ class HomeScreen : Screen {
                                 viewModel.createNewSprint(
                                     SprintModel(
                                         sprintNumber.toInt(),
-                                        holiday.toDouble()
+                                        holiday.toDouble(),
+                                        sprintNotes
                                     )
                                 )
                             }
@@ -138,71 +140,79 @@ class HomeScreen : Screen {
             }
         }
 
-
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
-            contentAlignment = Alignment.CenterEnd
-        ) {
-            Row(
-                modifier = Modifier.clickable { addSprintDialogVisibility = true },
-                verticalAlignment = Alignment.CenterVertically
+        Column(modifier = Modifier.fillMaxSize()) {
+            Text(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                text = stringResource(Res.string.app_title),
+                style = MaterialTheme.typography.h3,
+                color = secondaryLight, textAlign = TextAlign.Center
+            )
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
+                contentAlignment = Alignment.CenterEnd
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add Sprint Icon",
-                    modifier = Modifier.size(30.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Create New Sprint",
-                    style = MaterialTheme.typography.subtitle2,
-                )
+                Row(
+                    modifier = Modifier.clickable { addSprintDialogVisibility = true },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Add Sprint Icon",
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Create New Sprint",
+                        style = MaterialTheme.typography.subtitle2,
+                    )
+                }
             }
-        }
 
-        if (uiState.sprints.isNullOrEmpty().not()) {
-            LazyVerticalGrid(
-                modifier = Modifier.fillMaxSize().padding(top = 48.dp),
-                columns = GridCells.Fixed(4),
-                verticalArrangement = Arrangement.Top,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                items(uiState.sprints!!) { sprint ->
-                    Card(
-                        modifier = Modifier.padding(16.dp).height(150.dp)
-                            .clickable { navigator.push(SprintScreen(sprintId = sprint.sprintId.toString())) }.animateItem(),
-                        shape = RoundedCornerShape(16.dp),
-                        contentColor = MaterialTheme.colors.primary,
-                        backgroundColor = MaterialTheme.colors.surface,
-                        elevation = 3.dp,
-                        border = BorderStroke(2.dp, MaterialTheme.colors.secondary)
-                    ) {
-                        Box {
-                            Text(
-                                modifier = Modifier.align(Alignment.Center),
-                                text = "Sprint ${sprint.sprintId}",
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.h5, lineHeight = 0.sp
-                            )
-                            IconButton(
-                                modifier = Modifier.padding(12.dp).size(30.dp)
-                                    .align(Alignment.TopEnd),
-                                onClick = {
-                                    if (viewModel.checkDocumentExists(sprint.sprintId ?: 0)) {
-                                        viewModel.deleteSprint(sprintId = sprint.sprintId.toString())
-                                    } else scope.launch {
-                                        SnackbarController.sendEvent(
-                                            SnackbarEvent(
-                                                "Document does not exist"
-                                            )
-                                        )
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Delete,
-                                    contentDescription = "Remove Sprint Icon",
+            if (uiState.sprints.isNullOrEmpty().not()) {
+                LazyVerticalGrid(
+                    modifier = Modifier.fillMaxSize().padding(top = 48.dp),
+                    columns = GridCells.Fixed(4),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    items(uiState.sprints!!) { sprint ->
+                        Card(
+                            modifier = Modifier.padding(16.dp).height(150.dp)
+                                .clickable { navigator.push(SprintScreen(sprintId = sprint.sprintId.toString())) }
+                                .animateItem(),
+                            shape = RoundedCornerShape(16.dp),
+                            contentColor = MaterialTheme.colors.primary,
+                            backgroundColor = MaterialTheme.colors.surface,
+                            elevation = 3.dp,
+                            border = BorderStroke(2.dp, MaterialTheme.colors.secondary)
+                        ) {
+                            Box {
+                                Text(
+                                    modifier = Modifier.align(Alignment.Center),
+                                    text = "Sprint ${sprint.sprintId}",
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.h5, lineHeight = 0.sp
                                 )
+                                IconButton(
+                                    modifier = Modifier.padding(12.dp).size(30.dp)
+                                        .align(Alignment.TopEnd),
+                                    onClick = {
+                                        if (viewModel.checkDocumentExists(sprint.sprintId ?: 0)) {
+                                            viewModel.deleteSprint(sprintId = sprint.sprintId.toString())
+                                        } else scope.launch {
+                                            SnackbarController.sendEvent(
+                                                SnackbarEvent(
+                                                    "Document does not exist"
+                                                )
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = "Remove Sprint Icon",
+                                    )
+                                }
                             }
                         }
                     }

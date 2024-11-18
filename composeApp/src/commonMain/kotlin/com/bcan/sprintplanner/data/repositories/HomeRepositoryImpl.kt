@@ -20,9 +20,9 @@ class HomeRepositoryImpl(
                 .orderBy("sprintId", Query.Direction.DESCENDING)
                 .limit(10)
                 .snapshots.collect { sprints ->
-                val result = sprints.documents.map { it.data<SprintModel>() }
-                emit(NetworkResult.OnSuccess(result, ""))
-            }
+                    val result = sprints.documents.map { it.data<SprintModel>() }
+                    emit(NetworkResult.OnSuccess(result, ""))
+                }
         } catch (e: Exception) {
             e.printStackTrace()
             emit(NetworkResult.OnError(e.message))
@@ -34,12 +34,7 @@ class HomeRepositoryImpl(
             emit(NetworkResult.OnLoading)
             try {
                 firestore.collection("Sprints").document(sprintModel.sprintId.toString())
-                    .set(
-                        SprintModel(
-                            sprintId = sprintModel.sprintId,
-                            holidayCount = sprintModel.holidayCount
-                        ), merge = true
-                    )
+                    .set(sprintModel, merge = true)
                 emit(NetworkResult.OnSuccess(null, ""))
             } catch (t: Throwable) {
                 t.printStackTrace()
