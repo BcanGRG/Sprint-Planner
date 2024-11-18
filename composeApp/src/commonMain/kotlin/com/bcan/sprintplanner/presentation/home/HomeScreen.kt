@@ -24,7 +24,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -50,6 +49,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.bcan.sprintplanner.data.models.SprintModel
 import com.bcan.sprintplanner.presentation.sprint.SprintScreen
 import com.bcan.sprintplanner.themes.secondaryLight
+import com.bcan.sprintplanner.ui.NamedTextField
 import com.bcan.sprintplanner.ui.SprintPlannerLoadingIndicator
 import com.bcan.sprintplanner.ui.snackbar.SnackbarController
 import com.bcan.sprintplanner.ui.snackbar.SnackbarEvent
@@ -83,6 +83,7 @@ class HomeScreen : Screen {
                 )
             ) {
                 var sprintNumber by remember { mutableStateOf("") }
+                var sprintNotes by remember { mutableStateOf("") }
                 var holiday by remember { mutableStateOf("0.0") }
 
                 Box(
@@ -98,29 +99,25 @@ class HomeScreen : Screen {
                             alignment = Alignment.CenterVertically
                         ), horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Sprint Number :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = sprintNumber,
-                                onValueChange = { sprintNumber = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(32.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Holiday Count :", modifier = Modifier.weight(3f))
-                            TextField(
-                                value = holiday,
-                                onValueChange = { holiday = it },
-                                modifier = Modifier.weight(7f)
-                            )
-                        }
+                        NamedTextField(
+                            fieldName = "Sprint Number :",
+                            value = sprintNumber,
+                            onValueChange = { sprintNumber = it }
+                        )
+
+                        NamedTextField(
+                            fieldName = "Sprint Notes :",
+                            value = sprintNotes,
+                            onValueChange = { sprintNotes = it }
+                        )
+
+                        NamedTextField(
+                            fieldName = "Holiday Count :",
+                            value = holiday,
+                            onValueChange = { holiday = it }
+                        )
+
 
                         Button(onClick = {
                             if (viewModel.checkDocumentExists(sprintNumber.toInt())) {
@@ -129,7 +126,8 @@ class HomeScreen : Screen {
                                 viewModel.createNewSprint(
                                     SprintModel(
                                         sprintNumber.toInt(),
-                                        holiday.toDouble()
+                                        holiday.toDouble(),
+                                        sprintNotes
                                     )
                                 )
                             }
